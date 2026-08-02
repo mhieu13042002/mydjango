@@ -4,7 +4,6 @@ Django settings cho dự án Smart Expense Manager.
 
 from pathlib import Path
 from decouple import config, Csv
-import cloudinary
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -136,11 +135,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # ===================== LANGUAGE =================
 
 LANGUAGE_CODE = "vi"
-
 TIME_ZONE = "Asia/Ho_Chi_Minh"
 
 USE_I18N = True
-
 USE_TZ = True
 
 # ===================== STATIC ===================
@@ -160,15 +157,14 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Cloudinary sẽ lưu toàn bộ ImageField lên cloud
+# Cloudinary Storage
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
-cloudinary.config(
-    cloud_name=config("CLOUDINARY_CLOUD_NAME"),
-    api_key=config("CLOUDINARY_API_KEY"),
-    api_secret=config("CLOUDINARY_API_SECRET"),
-    secure=True,
-)
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": config("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": config("CLOUDINARY_API_KEY"),
+    "API_SECRET": config("CLOUDINARY_API_SECRET"),
+}
 
 # ====================== AUTH ====================
 
