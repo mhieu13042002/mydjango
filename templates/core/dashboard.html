@@ -100,7 +100,9 @@
   <div class="col-lg-5">
     <div class="glass p-4 h-100">
       <h6 class="fw-bold mb-3">Chi tiêu theo danh mục</h6>
-      <canvas id="catChart" height="220"></canvas>
+      <div style="position:relative; height:220px;">
+        <canvas id="catChart"></canvas>
+      </div>
       <div id="catEmpty" class="d-none text-center text-muted-soft small py-5">Chưa có dữ liệu chi tiêu tháng này.</div>
     </div>
   </div>
@@ -110,7 +112,9 @@
   <div class="col-lg-7">
     <div class="glass p-4">
       <h6 class="fw-bold mb-3">Chi tiêu theo ngày trong tháng</h6>
-      <canvas id="dailyChart" height="170"></canvas>
+      <div style="position:relative; height:220px;">
+        <canvas id="dailyChart"></canvas>
+      </div>
     </div>
   </div>
   <div class="col-lg-5">
@@ -176,7 +180,7 @@ fetch("{% url 'core:api_chart_category' %}?year={{ year }}&month={{ month }}")
     new Chart(document.getElementById('catChart'), {
       type: 'doughnut',
       data: { labels: d.labels, datasets: [{ data: d.data, backgroundColor: d.colors, borderWidth: 0 }] },
-      options: { plugins: { legend: { position: 'bottom', labels: { color: '#6B7280', boxWidth: 10, font: { family: 'Manrope', size: 11 } } } }, cutout: '68%' }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#6B7280', boxWidth: 10, font: { family: 'Manrope', size: 11 } } } }, cutout: '68%' }
     });
   });
 
@@ -185,7 +189,25 @@ fetch("{% url 'core:api_chart_daily' %}?year={{ year }}&month={{ month }}")
     new Chart(document.getElementById('dailyChart'), {
       type: 'line',
       data: { labels: d.labels, datasets: [{ label: 'Chi tiêu', data: d.data, borderColor: '#C9973D', backgroundColor: 'rgba(201,151,61,.14)', fill: true, tension: .35, pointRadius: 2 }] },
-      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#6B7280', font: { family: 'Manrope' } }, grid: { display: false } }, y: { ticks: { color: '#6B7280', font: { family: 'IBM Plex Mono' } }, grid: { color: 'rgba(20,33,61,.06)' } } } }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            ticks: {
+              color: '#6B7280', font: { family: 'Manrope', size: 11 },
+              maxRotation: 0, minRotation: 0, autoSkip: true, maxTicksLimit: 10,
+            },
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#6B7280', font: { family: 'IBM Plex Mono', size: 11 }, precision: 0 },
+            grid: { color: 'rgba(20,33,61,.06)' }
+          }
+        }
+      }
     });
   });
 </script>

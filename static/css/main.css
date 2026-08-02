@@ -272,3 +272,62 @@ input[type="password"], input[type="text"], input[type="email"], input[type="num
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* =========================================================================
+   FIXES — phản hồi từ ảnh chụp thực tế (chế độ tối + bố cục)
+   ========================================================================= */
+
+/* --- Placeholder: tăng độ tương phản, đặc biệt ở chế độ tối -------------- */
+::placeholder { color: var(--text-muted); opacity: .75; }
+[data-theme="dark"] ::placeholder { color: #93A0C2; opacity: .85; }
+.js-money-input::placeholder { text-align: right; }
+
+/* Chữ nhập tay trong input/select phải luôn dùng --text, không để trình
+   duyệt tự chọn màu mặc định (nguyên nhân chữ "biến mất" ở chế độ tối) */
+.form-control, .form-select,
+input[type="text"], input[type="number"], input[type="date"], input[type="email"], input[type="password"],
+textarea {
+  color: var(--text) !important;
+  caret-color: var(--gold);
+}
+[data-theme="dark"] .form-control, [data-theme="dark"] .form-select,
+[data-theme="dark"] input, [data-theme="dark"] textarea {
+  background-color: var(--surface) !important;
+}
+
+/* --- Select tháng/năm: chống bị flexbox bóp hẹp làm che mất số ---------- */
+select.form-select {
+  min-width: 108px;
+  flex: 0 0 auto;
+  width: auto;
+}
+select.form-select.form-select-sm { min-width: 96px; }
+
+/* --- Dropdown, pagination, alert: đồng bộ theo theme thay vì mặc định Bootstrap --- */
+.dropdown-menu {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.dropdown-menu .dropdown-item { color: var(--text); }
+.dropdown-menu .dropdown-item:hover { background: var(--gold-soft); color: var(--ink); }
+
+.pagination .page-link {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+.pagination .page-item.active .page-link {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+[data-theme="dark"] .pagination .page-item.active .page-link { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+
+[data-theme="dark"] .alert-success { background: var(--sage-soft); color: #C8E4D6; border: 1px solid rgba(79,121,101,.4); }
+[data-theme="dark"] .alert-danger  { background: var(--rust-soft);  color: #F3C9C7; border: 1px solid rgba(176,65,62,.4); }
+[data-theme="dark"] .alert-warning { background: var(--gold-soft);  color: #F0DBAE; border: 1px solid rgba(201,151,61,.4); }
+
+/* --- Biểu đồ Chart.js: canvas cần chiều cao/khung ổn định để không ép nhãn nghiêng --- */
+canvas { max-width: 100%; }
+
