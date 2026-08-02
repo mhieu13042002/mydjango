@@ -5,8 +5,8 @@
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
   <div>
-    <h3 class="fw-bold mb-0">Xin chào, {{ user.first_name|default:user.username }} 👋</h3>
-    <div class="text-muted-soft small">Đây là bức tranh tài chính của bạn tháng {{ month }}/{{ year }}.</div>
+    <h3 class="fw-bold mb-0">Xin chào, {{ user.first_name|default:user.username }}</h3>
+    <div class="text-muted-soft small">Tài chính của bạn tháng {{ month }}/{{ year }}.</div>
   </div>
   <form method="get" class="d-flex gap-2">
     <select name="month" onchange="this.form.submit()" class="form-select form-select-sm">
@@ -89,7 +89,7 @@
           <div class="fs-5 amount-mono">{{ forecast.predicted|vnd }}đ</div>
         </div>
         <span class="badge rounded-pill {% if forecast.trend == 'up' %}badge-soft-danger{% elif forecast.trend == 'down' %}badge-soft-success{% else %}badge-soft-info{% endif %} px-3 py-2">
-          {% if forecast.trend == 'up' %}📈 Tăng{% elif forecast.trend == 'down' %}📉 Giảm{% else %}➡️ Ổn định{% endif %}
+          {% if forecast.trend == 'up' %}Tăng{% elif forecast.trend == 'down' %}Giảm{% else %}Ổn định{% endif %}
         </span>
       </div>
       {% endif %}
