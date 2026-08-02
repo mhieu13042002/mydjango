@@ -1,22 +1,31 @@
 """
 Django settings cho dự án Smart Expense Manager.
 """
+
 from pathlib import Path
 from decouple import config, Csv
+import cloudinary
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-change-me")
 DEBUG = config("DEBUG", default=True, cast=bool)
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=Csv())
+
+ALLOWED_HOSTS = config(
+    "ALLOWED_HOSTS",
+    default="127.0.0.1,localhost",
+    cast=Csv(),
+)
 
 CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
     default="https://web-production-588d6.up.railway.app",
-    cast=Csv()
+    cast=Csv(),
 )
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# ===================== APPS =====================
 
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -25,6 +34,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
+
+    "cloudinary",
+    "cloudinary_storage",
 
     "rest_framework",
     "corsheaders",
@@ -35,6 +47,8 @@ INSTALLED_APPS = [
     "goals",
     "notifications",
 ]
+
+# =================== MIDDLEWARE =================
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -53,6 +67,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "config.urls"
+
+# ==================== TEMPLATE ==================
 
 TEMPLATES = [
     {
@@ -73,7 +89,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# ------------------------------------------------------------------ DB -----
+# ===================== DATABASE =================
 
 DB_ENGINE = config("DB_ENGINE", default="sqlite")
 
@@ -99,6 +115,8 @@ else:
         }
     }
 
+# ==================== PASSWORD ==================
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -115,6 +133,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# ===================== LANGUAGE =================
+
 LANGUAGE_CODE = "vi"
 
 TIME_ZONE = "Asia/Ho_Chi_Minh"
@@ -123,7 +143,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-# ================= STATIC =================
+# ===================== STATIC ===================
 
 STATIC_URL = "/static/"
 
@@ -135,21 +155,28 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# ================= MEDIA =================
+# ====================== MEDIA ===================
 
 MEDIA_URL = "/media/"
-
 MEDIA_ROOT = BASE_DIR / "media"
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+# Cloudinary sẽ lưu toàn bộ ImageField lên cloud
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
-# --------------------------------------------------------------- Auth ------
+cloudinary.config(
+    cloud_name=config("CLOUDINARY_CLOUD_NAME"),
+    api_key=config("CLOUDINARY_API_KEY"),
+    api_secret=config("CLOUDINARY_API_SECRET"),
+    secure=True,
+)
+
+# ====================== AUTH ====================
 
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "core:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
 
-# ---------------------------------------------------------------- DRF ------
+# ======================= DRF ====================
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -162,7 +189,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 12,
 }
 
-# -------------------------------------------------------------- CORS -------
+# ======================= CORS ===================
 
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
@@ -172,7 +199,7 @@ CORS_ALLOWED_ORIGINS = config(
 
 CORS_ALLOW_CREDENTIALS = True
 
-# --------------------------------------------------------------- Email -----
+# ====================== EMAIL ===================
 
 EMAIL_BACKEND = config(
     "EMAIL_BACKEND",
@@ -190,7 +217,7 @@ DEFAULT_FROM_EMAIL = config(
     default="Smart Expense <noreply@smartexpense.local>",
 )
 
-# ----------------------------------------------------------- Upload --------
+# ====================== UPLOAD ==================
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
@@ -204,6 +231,8 @@ ALLOWED_IMAGE_EXTENSIONS = [
 
 MAX_IMAGE_SIZE_MB = 8
 
-# -------------------------------------------------------------- AI ---------
+# ======================== AI ====================
 
 AI_MODEL_DIR = BASE_DIR / "ai_models"
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
