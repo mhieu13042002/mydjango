@@ -1,7 +1,6 @@
 """
 Django settings cho dự án Smart Expense Manager.
 """
-
 from pathlib import Path
 from decouple import config, Csv
 
@@ -9,33 +8,27 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-change-me")
 DEBUG = config("DEBUG", default=True, cast=bool)
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=Csv())
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
 
-ALLOWED_HOSTS = config(
-    "ALLOWED_HOSTS",
-    default="127.0.0.1,localhost",
-    cast=Csv(),
-)
-
-CSRF_TRUSTED_ORIGINS = config(
-    "CSRF_TRUSTED_ORIGINS",
-    default="https://web-production-588d6.up.railway.app",
-    cast=Csv(),
-)
-
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
-# ===================== APPS =====================
+# Railway tự cấp domain public qua biến RAILWAY_PUBLIC_DOMAIN - tự động thêm
+# vào ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS để không cần cấu hình tay.
+_railway_domain = config("RAILWAY_PUBLIC_DOMAIN", default="")
+if _railway_domain:
+    ALLOWED_HOSTS.append(_railway_domain)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{_railway_domain}")
+# Cho phép mọi subdomain *.up.railway.app (an toàn vì chỉ Railway mới cấp được domain này)
+ALLOWED_HOSTS.append(".up.railway.app")
+CSRF_TRUSTED_ORIGINS.append("https://*.up.railway.app")
 
 INSTALLED_APPS = [
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
-
-    "cloudinary",
-    "cloudinary_storage",
 
     "rest_framework",
     "corsheaders",
@@ -47,27 +40,20 @@ INSTALLED_APPS = [
     "notifications",
 ]
 
-# =================== MIDDLEWARE =================
-
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-
     "corsheaders.middleware.CorsMiddleware",
-
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-
     "core.middleware.AuditLogMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
-
-# ==================== TEMPLATE ==================
 
 TEMPLATES = [
     {
@@ -88,11 +74,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# ===================== DATABASE =================
+# ------------------------------------------------------------------ DB -----
+# Railway (và nhiều nền tảng khác) tự cấp biến DATABASE_URL / MYSQL_URL khi
+# bạn gắn plugin MySQL vào project. Nếu biến này tồn tại thì ưu tiên dùng nó;
+# nếu không, dùng các biến DB_* cấu hình thủ công trong .env (chạy local).
+import dj_database_url
 
+DATABASE_URL = config("DATABASE_URL", default="") or config("MYSQL_URL", default="") or config("MYSQL_PUBLIC_URL", default="")
 DB_ENGINE = config("DB_ENGINE", default="sqlite")
 
-if DB_ENGINE == "mysql":
+if DATABASE_URL:
+    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
+elif DB_ENGINE == "mysql":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
@@ -101,9 +94,7 @@ if DB_ENGINE == "mysql":
             "PASSWORD": config("DB_PASSWORD", default=""),
             "HOST": config("DB_HOST", default="127.0.0.1"),
             "PORT": config("DB_PORT", default="3306"),
-            "OPTIONS": {
-                "charset": "utf8mb4",
-            },
+            "OPTIONS": {"charset": "utf8mb4"},
         }
     }
 else:
@@ -114,66 +105,37 @@ else:
         }
     }
 
-# ==================== PASSWORD ==================
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-        "OPTIONS": {"min_length": 6},
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 6}},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
-
-# ===================== LANGUAGE =================
 
 LANGUAGE_CODE = "vi"
 TIME_ZONE = "Asia/Ho_Chi_Minh"
-
 USE_I18N = True
 USE_TZ = True
 
-# ===================== STATIC ===================
-
-STATIC_URL = "/static/"
-
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
-
+STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-# ====================== MEDIA ===================
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Cloudinary Storage
-DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CLOUDINARY_STORAGE = {
-    "CLOUD_NAME": config("CLOUDINARY_CLOUD_NAME"),
-    "API_KEY": config("CLOUDINARY_API_KEY"),
-    "API_SECRET": config("CLOUDINARY_API_SECRET"),
-}
-
-# ====================== AUTH ====================
-
+# --------------------------------------------------------------- Auth ------
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "core:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
 
-# ======================= DRF ====================
-
+# ---------------------------------------------------------------- DRF ------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
@@ -185,50 +147,33 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 12,
 }
 
-# ======================= CORS ===================
-
-CORS_ALLOWED_ORIGINS = config(
-    "CORS_ALLOWED_ORIGINS",
-    default="http://127.0.0.1:8000,http://localhost:8000",
-    cast=Csv(),
-)
-
+CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://127.0.0.1:8000,http://localhost:8000", cast=Csv())
 CORS_ALLOW_CREDENTIALS = True
 
-# ====================== EMAIL ===================
-
-EMAIL_BACKEND = config(
-    "EMAIL_BACKEND",
-    default="django.core.mail.backends.console.EmailBackend",
-)
-
+# --------------------------------------------------------------- Email -----
+EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="Smart Expense <noreply@smartexpense.local>")
 
-DEFAULT_FROM_EMAIL = config(
-    "DEFAULT_FROM_EMAIL",
-    default="Smart Expense <noreply@smartexpense.local>",
-)
-
-# ====================== UPLOAD ==================
-
-FILE_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
+# ----------------------------------------------------------- Upload --------
+FILE_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024  # 8MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
-
-ALLOWED_IMAGE_EXTENSIONS = [
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".webp",
-]
-
+ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"]
 MAX_IMAGE_SIZE_MB = 8
 
-# ======================== AI ====================
-
+# Đường dẫn model AI nhận diện ảnh (offline, mã nguồn mở)
 AI_MODEL_DIR = BASE_DIR / "ai_models"
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+# --------------------------------------------------------- Production ------
+# Railway (và các nền tảng tương tự) đặt sau reverse proxy HTTPS -> Django
+# cần biết header này để nhận diện đúng request là HTTPS.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)

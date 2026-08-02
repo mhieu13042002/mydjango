@@ -48,10 +48,10 @@ xem mục "Nâng cấp lên OpenAI Vision" bên dưới.
 
 ### Yêu cầu
 - Python 3.10+
-- MySQL Server 8.0+ (hoặc MariaDB 10.6+) **đã cài và đang chạy**
-- Windows: cần [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-  nếu `pip install mysqlclient` báo lỗi biên dịch — hoặc dùng `pip install pymysql`
-  thay thế (xem ghi chú cuối file).
+- MySQL Server 5.7+ / MariaDB 10.4+ **đã cài và đang chạy** (XAMPP, MySQL
+  Workbench, hoặc MySQL/MariaDB cài riêng đều được)
+- Dự án dùng **PyMySQL** (thuần Python) thay cho `mysqlclient`, nên **không cần**
+  cài thêm Visual C++ Build Tools hay MySQL Connector C trên Windows.
 
 ### Bước 1 — Tạo database MySQL
 
@@ -149,18 +149,58 @@ hình `EMAIL_HOST`/`EMAIL_HOST_USER`/`EMAIL_HOST_PASSWORD` thật để tính n�
 mật khẩu gửi được email (mặc định đang dùng console backend — email sẽ chỉ in
 ra terminal, không gửi thật).
 
+## ☁️ Deploy lên Railway
+
+Dự án đã có sẵn `Procfile` + `railway.json` để Railway tự động chạy migrate,
+seed danh mục, collectstatic và khởi động gunicorn — bạn chỉ cần:
+
+1. **Push code lên GitHub** (đảm bảo có đủ `Procfile`, `railway.json`, `requirements.txt` mới).
+2. Trên Railway, tạo project mới từ repo GitHub này.
+3. **Thêm database MySQL**: trong project Railway, bấm **"+ New"** → **"Database"** → **"Add MySQL"**.
+4. **Gắn biến kết nối DB vào service web**: vào service web (Django) → tab **Variables**
+   → **"+ New Variable"** → chọn **"Add Reference"** → chọn biến `MYSQL_URL` (hoặc
+   `DATABASE_URL`) từ service MySQL vừa tạo. App đã tự đọc biến này, không cần
+   cấu hình `DB_*` thủ công trên Railway.
+5. Vào tab **Variables** của service web, thêm các biến sau (bấm "Raw Editor" để dán nhanh):
+   ```
+   SECRET_KEY=<tạo chuỗi ngẫu nhiên dài, ví dụ chạy: python -c "import secrets; print(secrets.token_urlsafe(50))">
+   DEBUG=False
+   ```
+   (Railway tự cấp `PORT` và `RAILWAY_PUBLIC_DOMAIN`, app đã tự đọc 2 biến này, không cần thêm.)
+6. Railway sẽ tự build & deploy. Vào tab **Deployments → xem log** nếu muốn theo dõi
+   quá trình migrate/collectstatic/gunicorn khởi động.
+7. Sau khi deploy xong, mở domain Railway cấp (dạng `xxx.up.railway.app`) để vào web.
+8. Tạo tài khoản quản trị trên Railway (mở tab **Shell** của service, hoặc dùng nút
+   "Deploy Command" chạy `python manage.py createsuperuser` một lần).
+
+### ⚠️ Giới hạn cần biết khi deploy Railway (miễn phí)
+- **Ảnh upload không tồn tại lâu dài**: ổ đĩa của Railway là *ephemeral* (bị xoá
+  sạch mỗi lần deploy lại/khởi động lại container). Ảnh chi tiêu người dùng
+  upload qua tính năng "Ảnh AI" sẽ mất khi Railway redeploy. Để lưu ảnh vĩnh
+  viễn, cần gắn thêm **Railway Volume** (mount vào `MEDIA_ROOT`) hoặc dùng
+  storage ngoài như AWS S3/Cloudinary — không nằm trong phạm vi bản demo này.
+- Gói miễn phí Railway giới hạn giờ chạy/tháng — app có thể tự sleep nếu hết quota.
+- Email quên mật khẩu mặc định chỉ in ra log (console backend) — cần điền
+  `EMAIL_HOST`/`EMAIL_HOST_USER`/`EMAIL_HOST_PASSWORD` thật vào Variables nếu
+  muốn gửi email thật trên Railway.
+
+### 🔍 Nếu vẫn gặp lỗi 500 sau khi deploy lại
+Vào Railway → service web → tab **Deployments** → bấm vào lần deploy mới nhất
+→ xem **"Deploy Logs"** hoặc **"HTTP Logs"**. Traceback lỗi thật (dòng cuối
+cùng, kiểu `django.db.utils.OperationalError: ...` hoặc tương tự) sẽ nằm ở đó
+— gửi mình đoạn log đó để mình xác định chính xác nguyên nhân.
+
+
+
 ## 🩹 Xử lý lỗi thường gặp trên Windows
 
-- **`mysqlclient` lỗi biên dịch khi `pip install`**: cài
-  [MySQL Connector C](https://dev.mysql.com/downloads/connector/c/) hoặc dùng
-  bản wheel dựng sẵn: `pip install mysqlclient --only-binary :all:`. Nếu vẫn lỗi,
-  thay bằng `pip install pymysql` rồi thêm 2 dòng sau vào đầu `config/__init__.py`:
-  ```python
-  import pymysql
-  pymysql.install_as_MySQLdb()
-  ```
+- **Lỗi `MariaDB 10.5 or later is required`**: máy bạn đang dùng MariaDB cũ hơn
+  (ví dụ XAMPP thường đi kèm MariaDB 10.4). Đảm bảo cài đúng version Django
+  trong `requirements.txt` (`Django>=4.2,<5.0`) — bản này tương thích MariaDB
+  10.4 trở lên. Nếu trước đó bạn lỡ cài Django mới hơn, chạy:
+  `pip install "Django==4.2.17" --force-reinstall`.
 - **`&&` không chạy trong PowerShell**: chạy từng lệnh trên một dòng riêng.
 - **Lỗi `Access denied for user`**: kiểm tra lại `DB_USER`/`DB_PASSWORD` trong `.env`
-  khớp với tài khoản MySQL đã tạo ở Bước 1.
+  khớp với tài khoản MySQL đã tạo ở Bước 1 (hoặc `root` + mật khẩu rỗng nếu dùng XAMPP mặc định).
 
 Chúc bạn triển khai thành công! 🎉
