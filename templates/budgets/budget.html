@@ -1,7 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Ngân sách · Smart Expense{% endblock %}
+{% load vnd_filters %}
+{% block title %}Ngân sách · Sổ Chi{% endblock %}
 {% block content %}
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4" data-aos="fade-up">
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
   <div>
     <h3 class="fw-bold mb-0">Ngân sách</h3>
     <div class="text-muted-soft small">Đặt giới hạn chi tiêu theo danh mục — AI sẽ cảnh báo khi bạn sắp/đã vượt.</div>
@@ -16,37 +17,45 @@
   </form>
 </div>
 
-<form method="post" class="glass p-4" data-aos="fade-up">
+<div class="alert border-0 rounded-4 d-flex align-items-start gap-2 mb-4" style="background:var(--gold-soft); color:#8A6414;">
+  <svg width="16" height="16" class="mt-1 flex-shrink-0"><use href="#sc-budget"/></svg>
+  <div class="small">Mỗi danh mục lưu <strong>độc lập</strong> — để trống ô nào nghĩa là bạn chủ động gỡ giới hạn của riêng danh mục đó, các danh mục khác không bị ảnh hưởng.</div>
+</div>
+
+<form method="post" class="glass p-4">
   {% csrf_token %}
   <div class="d-flex flex-column gap-3">
     {% for row in rows %}
-    <div class="rounded-4 p-3" style="background:rgba(255,255,255,.03);border:1px solid var(--border);">
+    <div class="rounded-4 p-3" style="background:var(--surface);border:1px solid var(--border);">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
         <div class="d-flex align-items-center gap-2">
-          <span class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:{{ row.category.color }}22;">{{ row.category.icon }}</span>
+          <span class="d-flex align-items-center justify-content-center rounded-3" style="width:36px;height:36px;background:{{ row.category.color }}22;">{{ row.category.icon }}</span>
           <span class="fw-semibold small">{{ row.category.name }}</span>
         </div>
         <div class="d-flex align-items-center gap-2">
           <span class="text-muted-soft small">Giới hạn:</span>
-          <input type="number" step="10000" min="0" name="limit_{{ row.category.id }}" value="{{ row.limit }}"
-                 placeholder="Không giới hạn" class="form-control form-control-sm" style="width:150px;">
+          <input type="text" inputmode="numeric" autocomplete="off"
+                 name="limit_{{ row.category.id }}" value="{{ row.limit }}"
+                 placeholder="Không giới hạn" class="form-control form-control-sm js-money-input" style="width:150px;">
           <span class="text-muted-soft small">đ</span>
         </div>
       </div>
       {% if row.has_limit %}
-      <div class="progress-thin mb-1">
-        <div class="progress-thin" style="width:{{ row.ratio }}%; background: {% if row.ratio >= 100 %}#ef4444{% elif row.ratio >= 80 %}#f59e0b{% else %}#22c55e{% endif %};"></div>
+      <div class="progress-thin mb-1 overflow-hidden">
+        <div class="progress-thin" style="width:{{ row.ratio }}%; background: {% if row.ratio >= 100 %}var(--rust){% elif row.ratio >= 80 %}var(--gold){% else %}var(--sage){% endif %};"></div>
       </div>
       <div class="d-flex justify-content-between small text-muted-soft">
-        <span>Đã chi {{ row.spent|floatformat:0 }}đ</span>
+        <span>Đã chi {{ row.spent|vnd }}đ</span>
         <span>{{ row.ratio|floatformat:0 }}%</span>
       </div>
       {% else %}
-        <div class="text-muted-soft small">Đã chi {{ row.spent|floatformat:0 }}đ · chưa đặt giới hạn</div>
+        <div class="text-muted-soft small">Đã chi {{ row.spent|vnd }}đ · chưa đặt giới hạn</div>
       {% endif %}
     </div>
     {% endfor %}
   </div>
-  <button type="submit" class="btn btn-brand rounded-3 px-4 mt-4"><i class="fa-solid fa-check me-1"></i> Lưu ngân sách</button>
+  <button type="submit" class="btn btn-brand rounded-3 px-4 mt-4 d-flex align-items-center gap-2" style="width:fit-content;">
+    <svg width="16" height="16"><use href="#sc-add"/></svg> Lưu ngân sách
+  </button>
 </form>
 {% endblock %}

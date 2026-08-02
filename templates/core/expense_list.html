@@ -1,22 +1,23 @@
 {% extends "base.html" %}
-{% block title %}Chi tiêu · Smart Expense{% endblock %}
+{% load vnd_filters %}
+{% block title %}Chi tiêu · Sổ Chi{% endblock %}
 {% block content %}
 
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4" data-aos="fade-up">
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
   <div>
     <h3 class="fw-bold mb-0">Lịch sử chi tiêu</h3>
     <div class="text-muted-soft small">Tìm kiếm, lọc và quản lý toàn bộ giao dịch của bạn.</div>
   </div>
   <div class="d-flex gap-2">
-    <a href="{% url 'core:expense_add_photo' %}" class="btn btn-outline-light rounded-3"><i class="fa-solid fa-camera me-1"></i> Ảnh AI</a>
-    <a href="{% url 'core:expense_add' %}" class="btn btn-brand rounded-3"><i class="fa-solid fa-plus me-1"></i> Thêm giao dịch</a>
+    <a href="{% url 'core:expense_add_photo' %}" class="btn btn-outline-light rounded-3 d-flex align-items-center gap-2"><svg width="15" height="15"><use href="#sc-scan"/></svg> Ảnh AI</a>
+    <a href="{% url 'core:expense_add' %}" class="btn btn-brand rounded-3 d-flex align-items-center gap-2"><svg width="15" height="15"><use href="#sc-add"/></svg> Thêm giao dịch</a>
   </div>
 </div>
 
-<form method="get" class="glass p-3 mb-4" data-aos="fade-up">
+<form method="get" class="glass p-3 mb-4">
   <div class="row g-2 align-items-center">
     <div class="col-md-3">
-      <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm" placeholder="🔍 Tìm theo tên, ghi chú...">
+      <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm" placeholder="Tìm theo tên, ghi chú...">
     </div>
     <div class="col-6 col-md-2">
       <select name="type" onchange="this.form.submit()" class="form-select form-select-sm">
@@ -54,17 +55,17 @@
   </div>
   <div class="row g-2 mt-1">
     <div class="col-6 col-md-3">
-      <input type="number" name="min_amount" value="{{ min_amount }}" class="form-control form-control-sm" placeholder="Số tiền từ...">
+      <input type="text" inputmode="numeric" name="min_amount" value="{{ min_amount }}" class="form-control form-control-sm js-money-input" placeholder="Số tiền từ...">
     </div>
     <div class="col-6 col-md-3">
-      <input type="number" name="max_amount" value="{{ max_amount }}" class="form-control form-control-sm" placeholder="Số tiền đến...">
+      <input type="text" inputmode="numeric" name="max_amount" value="{{ max_amount }}" class="form-control form-control-sm js-money-input" placeholder="Số tiền đến...">
     </div>
   </div>
 </form>
 
 <div class="row g-3">
   {% for e in page_obj %}
-  <div class="col-md-6 col-xl-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|divisibleby:3|yesno:'0,50' }}">
+  <div class="col-md-6 col-xl-4">
     <div class="expense-card h-100">
       {% if e.image.original_image %}
         <img src="{{ e.image.annotated_image.url|default:e.image.original_image.url }}" class="w-100" style="height:140px;object-fit:cover;">
@@ -82,13 +83,13 @@
         <div class="d-flex justify-content-between align-items-center">
           <span class="text-muted-soft small">{{ e.date|date:"d/m/Y" }}</span>
           <span class="fw-bold {% if e.type == 'income' %}text-success{% else %}text-danger{% endif %}">
-            {% if e.type == 'income' %}+{% else %}-{% endif %}{{ e.amount|floatformat:0 }}đ
+            {% if e.type == 'income' %}+{% else %}-{% endif %}{{ e.amount|vnd }}đ
           </span>
         </div>
         {% if e.is_special %}<span class="badge badge-soft-info mt-2">Khoản chi đặc biệt</span>{% endif %}
         <div class="d-flex gap-2 mt-3">
-          <a href="{% url 'core:expense_detail' e.pk %}" class="btn btn-sm btn-outline-light flex-fill rounded-3"><i class="fa-solid fa-eye"></i></a>
-          <a href="{% url 'core:expense_edit' e.pk %}" class="btn btn-sm btn-outline-light flex-fill rounded-3"><i class="fa-solid fa-pen"></i></a>
+          <a href="{% url 'core:expense_detail' e.pk %}" class="btn btn-sm btn-outline-light flex-fill rounded-3 d-flex align-items-center justify-content-center"><svg width="14" height="14"><use href="#sc-search"/></svg></a>
+          <a href="{% url 'core:expense_edit' e.pk %}" class="btn btn-sm btn-outline-light flex-fill rounded-3 d-flex align-items-center justify-content-center"><svg width="14" height="14"><use href="#sc-add"/></svg></a>
           <form method="post" action="{% url 'core:expense_delete' e.pk %}" class="flex-fill" onsubmit="return confirmAction('Xoá giao dịch này?')">
             {% csrf_token %}
             <button class="btn btn-sm btn-outline-danger w-100 rounded-3"><i class="fa-solid fa-trash"></i></button>

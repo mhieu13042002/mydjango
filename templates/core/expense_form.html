@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}{% if mode == 'edit' %}Sửa{% else %}Thêm{% endif %} chi tiêu · Smart Expense{% endblock %}
+{% block title %}{% if mode == 'edit' %}Sửa{% else %}Thêm{% endif %} chi tiêu · Sổ Chi{% endblock %}
 {% block content %}
-<div class="mx-auto" style="max-width:560px;" data-aos="fade-up">
+<div class="mx-auto" style="max-width:560px;">
   <h4 class="fw-bold mb-1">{% if mode == 'edit' %}Sửa giao dịch{% else %}Thêm giao dịch mới{% endif %}</h4>
   <p class="text-muted-soft small mb-4">AI sẽ tự động gợi ý danh mục khi bạn nhập tên khoản chi.</p>
 
@@ -14,8 +14,8 @@
     <div class="mb-3">
       <label class="form-label small text-muted-soft">Tên khoản {% if mode != 'edit' %}<span class="text-danger">*</span>{% endif %}</label>
       {{ form.title }}
-      <div id="aiSuggestBox" class="d-none mt-2 small px-3 py-2 rounded-3" style="background:rgba(99,102,241,.1); border:1px solid rgba(99,102,241,.3);">
-        🤖 <span id="aiSuggestText"></span> <a href="javascript:void(0)" id="aiApplyBtn" class="text-decoration-none">Áp dụng</a>
+      <div id="aiSuggestBox" class="d-none mt-2 small px-3 py-2 rounded-3 d-flex align-items-center gap-2" style="background:var(--gold-soft); border:1px solid rgba(201,151,61,.35); color:#8A6414;">
+        <svg width="14" height="14"><use href="#sc-scan"/></svg><span id="aiSuggestText"></span> <a href="javascript:void(0)" id="aiApplyBtn" class="text-decoration-none fw-semibold">Áp dụng</a>
       </div>
     </div>
     <div class="row g-3 mb-3">

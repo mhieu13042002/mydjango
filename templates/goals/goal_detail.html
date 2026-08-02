@@ -1,7 +1,8 @@
 {% extends "base.html" %}
-{% block title %}{{ goal.name }} · Smart Expense{% endblock %}
+{% block title %}{{ goal.name }} · Sổ Chi{% endblock %}
+{% load vnd_filters %}
 {% block content %}
-<div class="row g-4" data-aos="fade-up">
+<div class="row g-4">
   <div class="col-lg-7">
     <div class="glass p-4">
       <div class="d-flex justify-content-between align-items-start mb-3">
@@ -12,12 +13,12 @@
         </form>
       </div>
 
-      <div class="progress-thin mb-2" style="height:12px;">
-        <div class="progress-thin" style="height:12px; width:{{ goal.progress_pct }}%; background:linear-gradient(90deg,#6366f1,#14b8a6);"></div>
+      <div class="progress-thin mb-2 overflow-hidden" style="height:12px;">
+        <div class="progress-thin" style="height:12px; width:{{ goal.progress_pct }}%; background:var(--gold);"></div>
       </div>
-      <div class="d-flex justify-content-between mb-4">
-        <span class="fw-bold">{{ goal.current_amount|floatformat:0 }}đ</span>
-        <span class="text-muted-soft">/ {{ goal.target_amount|floatformat:0 }}đ</span>
+      <div class="d-flex justify-content-between mb-4 amount-mono">
+        <span class="fw-bold">{{ goal.current_amount|vnd }}đ</span>
+        <span class="text-muted-soft">/ {{ goal.target_amount|vnd }}đ</span>
       </div>
 
       {% if not goal.is_completed %}
@@ -28,11 +29,11 @@
         </div>
         <div class="col-4 text-center">
           <div class="text-muted-soft small">Cần/tháng</div>
-          <div class="fw-bold">{{ goal.monthly_required|floatformat:0 }}đ</div>
+          <div class="fw-bold amount-mono">{{ goal.monthly_required|vnd }}đ</div>
         </div>
         <div class="col-4 text-center">
           <div class="text-muted-soft small">Cần/ngày</div>
-          <div class="fw-bold">{{ goal.daily_required|floatformat:0 }}đ</div>
+          <div class="fw-bold amount-mono">{{ goal.daily_required|vnd }}đ</div>
         </div>
       </div>
 
@@ -61,7 +62,7 @@
           <div class="small fw-semibold">{{ c.date|date:"d/m/Y" }}</div>
           {% if c.note %}<div class="text-muted-soft" style="font-size:.75rem;">{{ c.note }}</div>{% endif %}
         </div>
-        <div class="fw-bold text-success">+{{ c.amount|floatformat:0 }}đ</div>
+        <div class="fw-bold amount-mono" style="color:var(--sage)">+{{ c.amount|vnd }}đ</div>
       </div>
       {% empty %}
       <div class="text-center text-muted-soft small py-4">Chưa có lần nạp tiền nào.</div>

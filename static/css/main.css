@@ -1,128 +1,212 @@
+/* =========================================================================
+   SMART EXPENSE — "SỔ CHI" DESIGN SYSTEM
+   -------------------------------------------------------------------------
+   Định hướng: một cuốn sổ chi tiêu vật lý, không phải dashboard SaaS AI
+   đại trà. Navy mực + vàng đồng + giấy kem, số liệu đặt bằng font mono
+   tabular (kiểu máy tính tiền), thẻ dữ liệu có viền đứt như biên lai.
+   Mọi class cũ (.glass, .sidebar, .nav-link-custom, .btn-brand, .card-kpi,
+   .badge-soft-*, .expense-card, .progress-thin, .dropzone, .skeleton,
+   .theme-toggle, .avatar-circle, .toast-custom...) được GIỮ NGUYÊN TÊN để
+   không phải sửa lại từng template — chỉ định nghĩa lại hình hài.
+   ========================================================================= */
+
 :root {
-  --bg: #0b0f19;
-  --bg-grad-1: rgba(99, 102, 241, .16);
-  --bg-grad-2: rgba(20, 184, 166, .12);
-  --surface: rgba(26, 34, 51, 0.6);
-  --surface-solid: #171e2e;
-  --border: rgba(255, 255, 255, 0.08);
-  --text: #e5e9f0;
-  --text-muted: #94a3b8;
-  --brand: #6366f1;
-  --brand-2: #818cf8;
-  --success: #22c55e;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --radius-lg: 20px;
-  --radius-md: 14px;
+  --bg: #FAF7F0;
+  --bg-grad-1: transparent;
+  --bg-grad-2: transparent;
+  --surface: #FFFFFF;
+  --surface-solid: #FFFFFF;
+  --border: #E7E1D3;
+  --text: #14213D;
+  --text-muted: #6B7280;
+  --brand: #C9973D;       /* vàng đồng — accent chính, thay cho indigo cũ */
+  --brand-2: #14213D;     /* navy — dùng cho gradient nhẹ / nút phụ */
+  --ink: #14213D;
+  --ink-soft: #22335C;
+  --gold: #C9973D;
+  --gold-soft: #F3E4C4;
+  --sage: #4F7965;
+  --sage-soft: #E4EDE8;
+  --rust: #B0413E;
+  --rust-soft: #F5E3E2;
+  --success: #4F7965;
+  --danger: #B0413E;
+  --warning: #C9973D;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+
+  --font-display: 'Fraunces', 'Georgia', serif;
+  --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
-[data-theme="light"] {
-  --bg: #f3f5fb;
-  --bg-grad-1: rgba(99, 102, 241, .10);
-  --bg-grad-2: rgba(20, 184, 166, .08);
-  --surface: rgba(255, 255, 255, 0.75);
-  --surface-solid: #ffffff;
-  --border: rgba(15, 23, 42, 0.08);
-  --text: #0f172a;
-  --text-muted: #64748b;
+/* Chế độ tối — vẫn navy làm gốc nhưng đảo nền/chữ, giữ đúng tinh thần sổ tay
+   (không dùng đen-tím-neon chung chung) */
+[data-theme="dark"] {
+  --bg: #0F172E;
+  --surface: #182A4D;
+  --surface-solid: #182A4D;
+  --border: rgba(237, 231, 217, 0.12);
+  --text: #EDE7D9;
+  --text-muted: #9AA6C4;
+  --gold-soft: rgba(201,151,61,.18);
+  --sage-soft: rgba(79,121,101,.22);
+  --rust-soft: rgba(176,65,62,.22);
 }
 
 * { box-sizing: border-box; }
 
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-body);
   background:
-    radial-gradient(1200px 600px at 90% -10%, var(--bg-grad-1), transparent),
-    radial-gradient(1000px 500px at -10% 10%, var(--bg-grad-2), transparent),
-    var(--bg);
+    radial-gradient(circle at 1px 1px, rgba(20,33,61,0.045) 1px, transparent 0) var(--bg);
+  background-size: 20px 20px;
   color: var(--text);
   min-height: 100vh;
-  transition: background .3s ease, color .3s ease;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  transition: background .2s ease, color .2s ease;
+}
+[data-theme="dark"] body { background-image: none; }
+
+h1, h2, h3, h4, h5, h6, .fw-bold {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
 }
 
+a { color: var(--ink); }
+a:hover { color: var(--gold); }
+[data-theme="dark"] a { color: var(--text); }
+
+/* --- Ledger-stub panel (used everywhere via .glass) -------------------- */
 .glass {
   background: var(--surface);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(20,33,61,0.04), 0 10px 28px -14px rgba(20,33,61,0.14);
+  position: relative;
 }
 
 .text-muted-soft { color: var(--text-muted) !important; }
 
+/* --- Sidebar ------------------------------------------------------------ */
 .sidebar {
-  width: 260px;
+  width: 250px;
   min-height: 100vh;
   position: sticky;
   top: 0;
-  border-right: 1px solid var(--border);
+  background: var(--ink) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  color: #EDE7D9;
+  box-shadow: 4px 0 24px -12px rgba(20,33,61,.3);
 }
+.sidebar .text-muted-soft { color: #8B96B4 !important; }
 
 .nav-link-custom {
   display: flex; align-items: center; gap: .75rem;
-  padding: .65rem .9rem; border-radius: 12px;
-  color: var(--text-muted); font-weight: 500; font-size: .92rem;
-  text-decoration: none; transition: all .18s ease;
+  padding: .62rem .8rem; border-radius: 9px;
+  color: #CBD2E3; font-weight: 600; font-size: .87rem;
+  text-decoration: none; transition: background .15s ease, color .15s ease;
+  position: relative;
 }
-.nav-link-custom:hover { background: rgba(99,102,241,.12); color: var(--text); }
+.nav-link-custom svg { width: 18px; height: 18px; flex-shrink: 0; }
+.nav-link-custom:hover { background: var(--ink-soft); color: #fff; }
 .nav-link-custom.active {
-  background: linear-gradient(135deg, rgba(99,102,241,.28), rgba(99,102,241,.06));
-  border: 1px solid rgba(99,102,241,.35);
+  background: var(--ink-soft);
+  border: none;
   color: #fff;
 }
+.nav-link-custom.active::before {
+  content: "";
+  position: absolute; left: -10px; top: 6px; bottom: 6px; width: 3px;
+  border-radius: 3px; background: var(--gold);
+}
 
+/* --- Buttons -------------------------------------------------------------*/
 .btn-brand {
-  background: linear-gradient(135deg, var(--brand), #4f46e5);
-  border: none; color: #fff; font-weight: 600;
-  box-shadow: 0 8px 24px -8px rgba(99,102,241,.6);
+  background: var(--ink);
+  border: none; color: #fff; font-weight: 700;
+  box-shadow: 0 8px 20px -10px rgba(20,33,61,.5);
 }
-.btn-brand:hover { color: #fff; filter: brightness(1.08); }
+.btn-brand:hover { background: var(--ink-soft); color: #fff; filter: none; }
 
-.card-kpi { border-radius: var(--radius-lg); padding: 1.25rem; }
+.btn-outline-light {
+  background: var(--surface);
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+}
+.btn-outline-light:hover { border-color: var(--ink) !important; background: var(--surface); color: var(--text) !important; }
+[data-theme="dark"] .btn-outline-light { background: var(--surface); }
 
-.badge-soft-success { background: rgba(34,197,94,.15); color: #4ade80; }
-.badge-soft-danger { background: rgba(239,68,68,.15); color: #f87171; }
-.badge-soft-warning { background: rgba(245,158,11,.15); color: #fbbf24; }
-.badge-soft-info { background: rgba(99,102,241,.15); color: #a5b4fc; }
+.btn-outline-danger { border-color: var(--rust) !important; color: var(--rust) !important; background: transparent; }
+.btn-outline-danger:hover { background: var(--rust-soft) !important; }
 
+/* --- KPI / stub cards ---------------------------------------------------*/
+.card-kpi {
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+.card-kpi::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: repeating-linear-gradient(90deg, var(--gold) 0 9px, transparent 9px 16px);
+}
+.card-kpi .fs-4 { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: -0.01em; }
+.card-kpi svg { width: 16px; height: 16px; }
+
+/* --- Badges ---------------------------------------------------------------*/
+.badge-soft-success { background: var(--sage-soft); color: var(--sage); font-weight: 700; }
+.badge-soft-danger { background: var(--rust-soft); color: var(--rust); font-weight: 700; }
+.badge-soft-warning { background: var(--gold-soft); color: #8A6414; font-weight: 700; }
+.badge-soft-info { background: #E7E9F1; color: var(--ink); font-weight: 700; }
+
+/* --- Insight items (AI notes) ---------------------------------------------*/
 .insight-item {
-  display: flex; gap: .75rem; align-items: flex-start;
-  padding: .75rem .9rem; border-radius: 12px; border: 1px solid var(--border);
-  font-size: .875rem; margin-bottom: .5rem;
+  display: flex; gap: .7rem; align-items: flex-start;
+  padding: .7rem .85rem; border-radius: 10px; border: 1px dashed var(--border);
+  font-size: .87rem; margin-bottom: .5rem; background: transparent;
 }
-.insight-info { background: rgba(99,102,241,.08); }
-.insight-warning { background: rgba(245,158,11,.08); }
-.insight-danger { background: rgba(239,68,68,.08); }
-.insight-success { background: rgba(34,197,94,.08); }
+.insight-info { border-color: #C7CEE0; }
+.insight-warning { border-color: var(--gold); background: var(--gold-soft); }
+.insight-danger { border-color: var(--rust); background: var(--rust-soft); }
+.insight-success { border-color: var(--sage); background: var(--sage-soft); }
 
-input[type="password"], input[type="text"], input[type="email"] {
-  background: rgba(255,255,255,.04);
+/* --- Forms ------------------------------------------------------------- */
+input[type="password"], input[type="text"], input[type="email"], input[type="number"], input[type="date"] {
+  background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
-  border-radius: 12px;
-  padding: .5rem .85rem;
+  border-radius: 9px;
+  padding: .55rem .85rem;
   width: 100%;
 }
 
 .form-control, .form-select {
-  background: rgba(255,255,255,.04);
+  background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
-  border-radius: 12px;
+  border-radius: 9px;
 }
-[data-theme="light"] .form-control, [data-theme="light"] .form-select { background: #fff; }
 .form-control:focus, .form-select:focus {
-  background: rgba(255,255,255,.06);
-  border-color: var(--brand);
-  box-shadow: 0 0 0 .2rem rgba(99,102,241,.18);
+  background: var(--surface);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 .18rem rgba(201,151,61,.22);
   color: var(--text);
 }
+.form-label { font-weight: 700; letter-spacing: .01em; }
+
+/* Money input — dùng chung với static/js/currency-format.js */
+.js-money-input { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
 
 .category-pill {
   display: inline-flex; align-items: center; gap: .4rem;
-  padding: .35rem .7rem; border-radius: 999px; font-size: .8rem; font-weight: 500;
+  padding: .32rem .7rem; border-radius: 999px; font-size: .78rem; font-weight: 700;
 }
 
+/* --- Expense card --------------------------------------------------------*/
 .expense-card {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
@@ -130,46 +214,61 @@ input[type="password"], input[type="text"], input[type="email"] {
   transition: transform .15s ease, box-shadow .15s ease;
   overflow: hidden;
 }
-.expense-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px -12px rgba(0,0,0,.4); }
+.expense-card:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -16px rgba(20,33,61,.25); }
 
-.progress-thin { height: 8px; border-radius: 999px; background: rgba(255,255,255,.08); }
+/* --- Progress bars (budget / goal gauges) --------------------------------*/
+.progress-thin { height: 8px; border-radius: 999px; background: #EFEAE0; }
+[data-theme="dark"] .progress-thin { background: rgba(237,231,217,.12); }
 
+/* --- Dropzone (photo upload) ----------------------------------------------*/
 .dropzone {
-  border: 2px dashed var(--border);
+  border: 1.5px dashed var(--border);
   border-radius: var(--radius-lg);
   padding: 2.5rem 1rem;
   text-align: center;
   cursor: pointer;
   transition: all .2s ease;
+  background: repeating-linear-gradient(-45deg, transparent 0 10px, rgba(20,33,61,.015) 10px 20px);
 }
-.dropzone:hover, .dropzone.dragover { border-color: var(--brand); background: rgba(99,102,241,.06); }
+.dropzone svg { width: 34px; height: 34px; color: var(--text-muted); }
+.dropzone:hover, .dropzone.dragover { border-color: var(--gold); background-color: var(--gold-soft); }
 
+/* --- Skeleton loading -------------------------------------------------- */
 .skeleton {
-  background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.12) 37%, rgba(255,255,255,.05) 63%);
+  background: linear-gradient(90deg, #EFEAE0 25%, #F6F2E8 37%, #EFEAE0 63%);
   background-size: 400% 100%;
   animation: skeleton-loading 1.4s ease infinite;
   border-radius: 10px;
 }
 @keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
 
+/* --- Topbar icon buttons ------------------------------------------------*/
 .theme-toggle {
-  width: 42px; height: 42px; border-radius: 50%;
+  width: 40px; height: 40px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   border: 1px solid var(--border); background: var(--surface); cursor: pointer;
   color: var(--text);
 }
+.theme-toggle svg { width: 17px; height: 17px; }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: rgba(148,163,184,.35); border-radius: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(20,33,61,.2); border-radius: 8px; }
 
 .avatar-circle {
   width: 38px; height: 38px; border-radius: 50%; object-fit: cover;
   border: 2px solid var(--border);
 }
 
-.toast-custom { border-radius: 14px; border: 1px solid var(--border); }
+.toast-custom { border-radius: 12px; border: 1px solid var(--border); }
+
+/* --- Ledger stub amount rows (reusable) ----------------------------------*/
+.amount-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 
 @media (max-width: 991px) {
-  .sidebar { position: fixed; left: -280px; z-index: 1050; background: var(--surface-solid); transition: left .25s ease; }
+  .sidebar { position: fixed; left: -280px; z-index: 1050; transition: left .25s ease; }
   .sidebar.show { left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
 }

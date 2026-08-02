@@ -1,15 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Thông báo · Smart Expense{% endblock %}
+{% block title %}Thông báo · Sổ Chi{% endblock %}
 {% block content %}
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4" data-aos="fade-up">
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
   <h3 class="fw-bold mb-0">Thông báo</h3>
   <button class="btn btn-outline-light btn-sm rounded-3" onclick="markAllRead()">Đánh dấu đã đọc tất cả</button>
 </div>
 
-<div class="glass p-2" data-aos="fade-up">
+<div class="glass p-2">
   {% for n in notifications %}
   <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-1 notif-item" data-id="{{ n.pk }}"
-       style="{% if not n.is_read %}background:rgba(99,102,241,.08);{% endif %}">
+       style="{% if not n.is_read %}background:var(--gold-soft);{% endif %}">
     <span class="fs-5">{{ n.icon }}</span>
     <div class="flex-grow-1">
       <div class="fw-semibold small">{{ n.title }}</div>

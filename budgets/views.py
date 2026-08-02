@@ -20,10 +20,21 @@ def budget_view(request):
     if request.method == "POST":
         for cat in categories:
             field = f"limit_{cat.id}"
-            val = request.POST.get(field, "").strip()
+            # Gỡ dấu chấm ngăn cách hàng nghìn (100.000 -> 100000) trước khi parse số —
+            # đây cũng là nguyên nhân khiến giới hạn cũ bị xoá nhầm trước đây: input
+            # hiển thị "100.000" nhưng chưa gỡ dấu chấm khiến giá trị parse sai/rỗng.
+            raw = request.POST.get(field, "").strip()
+            val = raw.replace(".", "").replace(",", "").strip()
             existing = Budget.objects.filter(user=request.user, category=cat, month=month, year=year).first()
             if val:
-                amount = float(val)
+                try:
+                    amount = float(val)
+                except ValueError:
+                    continue
+                if amount <= 0:
+                    if existing:
+                        existing.delete()
+                    continue
                 if existing:
                     if float(existing.limit_amount) != amount:
                         existing.limit_amount = amount
@@ -32,6 +43,7 @@ def budget_view(request):
                 else:
                     Budget.objects.create(user=request.user, category=cat, month=month, year=year, limit_amount=amount)
             elif existing:
+                # Trường để trống thật sự (người dùng chủ động xoá) -> gỡ giới hạn danh mục này
                 existing.delete()
         messages.success(request, "Đã lưu ngân sách tháng này.")
         return redirect(f"/ngan-sach/?year={year}&month={month}")
@@ -49,7 +61,7 @@ def budget_view(request):
         limit = float(budget.limit_amount) if budget else 0
         ratio = round(spent / limit * 100, 0) if limit > 0 else 0
         rows.append({
-            "category": cat, "limit": limit if limit else "", "spent": spent,
+            "category": cat, "limit": int(limit) if limit else "", "spent": spent,
             "ratio": min(ratio, 100), "has_limit": limit > 0,
         })
 

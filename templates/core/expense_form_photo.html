@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Thêm chi tiêu bằng ảnh AI · Smart Expense{% endblock %}
+{% block title %}Thêm chi tiêu bằng ảnh AI · Sổ Chi{% endblock %}
 {% block content %}
-<div class="mx-auto" style="max-width:640px;" data-aos="fade-up">
-  <h4 class="fw-bold mb-1"><i class="fa-solid fa-camera me-2"></i>Thêm chi tiêu bằng ảnh</h4>
+<div class="mx-auto" style="max-width:640px;">
+  <h4 class="fw-bold mb-1 d-flex align-items-center gap-2"><svg width="20" height="20"><use href="#sc-scan"/></svg>Thêm chi tiêu bằng ảnh</h4>
   <p class="text-muted-soft small mb-4">Tải ảnh hoá đơn / vật dụng lên, AI sẽ tự nhận diện và gợi ý danh mục cho bạn.</p>
 
   <!-- Bước 1: upload -->
   <div id="uploadStep" class="glass p-4">
     <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-      <i class="fa-solid fa-cloud-arrow-up fs-1 text-muted-soft mb-2"></i>
+      <svg width="34" height="34" class="mb-2 text-muted-soft"><use href="#sc-add"/></svg>
       <div class="fw-semibold">Nhấn để chọn ảnh hoặc kéo thả vào đây</div>
       <div class="text-muted-soft small mt-1">Hỗ trợ JPG, PNG, WEBP · tối đa 8MB</div>
       <input type="file" id="fileInput" accept="image/*" capture="environment" class="d-none">
@@ -20,15 +20,15 @@
     <div class="skeleton mb-3" style="height:220px;"></div>
     <div class="skeleton mb-2" style="height:16px;width:60%;"></div>
     <div class="skeleton" style="height:16px;width:40%;"></div>
-    <div class="text-center text-muted-soft small mt-3"><i class="fa-solid fa-brain fa-beat me-1"></i> AI đang phân tích ảnh...</div>
+    <div class="text-center text-muted-soft small mt-3 d-flex align-items-center justify-content-center gap-2"><svg width="15" height="15"><use href="#sc-scan"/></svg> AI đang phân tích ảnh...</div>
   </div>
 
   <!-- Bước 2: preview + confirm -->
   <div id="previewStep" class="glass p-4 d-none">
     <img id="previewImg" class="w-100 rounded-4 mb-3" style="max-height:320px;object-fit:cover;">
 
-    <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded-3" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);">
-      <i class="fa-solid fa-robot"></i>
+    <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded-3" style="background:var(--gold-soft);border:1px solid rgba(201,151,61,.35); color:#8A6414;">
+      <svg width="16" height="16"><use href="#sc-scan"/></svg>
       <div class="small">
         AI nhận diện: <strong id="detectedLabel">-</strong>
         <span id="confidenceBadge" class="badge badge-soft-info ms-1"></span>
@@ -47,7 +47,7 @@
       </div>
       <div class="col-6">
         <label class="form-label small text-muted-soft">Số tiền (đ) <span class="text-danger">*</span></label>
-        <input type="number" id="amountInput" class="form-control" min="0" step="1000" placeholder="65000" autofocus>
+        <input type="text" inputmode="numeric" id="amountInput" class="form-control js-money-input" placeholder="65.000" autofocus autocomplete="off">
       </div>
       <div class="col-6">
         <label class="form-label small text-muted-soft">Ngày</label>
@@ -61,7 +61,7 @@
 
     <div class="d-flex gap-2">
       <button class="btn btn-outline-light flex-fill rounded-3" onclick="resetForm()">Huỷ / Chọn ảnh khác</button>
-      <button class="btn btn-brand flex-fill rounded-3" id="saveBtn" onclick="saveExpense()"><i class="fa-solid fa-check me-1"></i> Lưu chi tiêu</button>
+      <button class="btn btn-brand flex-fill rounded-3" id="saveBtn" onclick="saveExpense()"><svg width="14" height="14" class="me-1"><use href="#sc-add"/></svg> Lưu chi tiêu</button>
     </div>
   </div>
 </div>
@@ -135,9 +135,10 @@ function resetForm() {
 }
 
 function saveExpense() {
-  const amount = document.getElementById('amountInput').value;
+  const amountEl = document.getElementById('amountInput');
+  const amount = amountEl.dataset.rawValue || amountEl.value.replace(/\D/g, '');
   const categoryId = document.getElementById('categorySelect').value;
-  if (!amount || amount <= 0) { showToast('Vui lòng nhập số tiền hợp lệ.', 'warning'); return; }
+  if (!amount || Number(amount) <= 0) { showToast('Vui lòng nhập số tiền hợp lệ.', 'warning'); return; }
   if (!categoryId) { showToast('Vui lòng chọn danh mục.', 'warning'); return; }
 
   const btn = document.getElementById('saveBtn');
@@ -162,11 +163,11 @@ function saveExpense() {
       setTimeout(() => window.location.href = d.redirect_url, 900);
     } else {
       showToast(d.error || 'Có lỗi xảy ra.', 'error');
-      btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Lưu chi tiêu';
+      btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" class="me-1"><use href="#sc-add"/></svg> Lưu chi tiêu';
     }
   }).catch(() => {
     showToast('Có lỗi xảy ra khi lưu.', 'error');
-    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Lưu chi tiêu';
+    btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" class="me-1"><use href="#sc-add"/></svg> Lưu chi tiêu';
   });
 }
 </script>

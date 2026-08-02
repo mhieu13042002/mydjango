@@ -4,66 +4,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block title %}Smart Expense Manager{% endblock %}</title>
+<title>{% block title %}Sổ Chi{% endblock %}</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/main.css' %}">
 {% block extra_css %}{% endblock %}
 </head>
 <body>
 <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;"></div>
 
+<!-- Bộ icon riêng của Sổ Chi (không dùng icon pack đại trà) -->
+<div id="scIconSprite" style="display:none" aria-hidden="true"></div>
+<script>
+fetch("{% static 'icons/sc-icons.svg' %}").then(r => r.text()).then(svg => {
+  document.getElementById('scIconSprite').innerHTML = svg;
+});
+</script>
+
 {% if user.is_authenticated %}
 <div class="d-flex">
   <!-- Sidebar -->
-  <aside class="sidebar glass p-3 d-flex flex-column" id="sidebar">
+  <aside class="sidebar p-3 d-flex flex-column" id="sidebar">
     <div class="d-flex align-items-center gap-2 mb-4 px-1">
-      <div class="rounded-4 d-flex align-items-center justify-content-center" style="width:42px;height:42px;background:linear-gradient(135deg,#6366f1,#14b8a6);font-size:1.3rem;">🤖</div>
+      <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:linear-gradient(155deg, var(--gold) 0%, #A8792C 100%); color:var(--ink);">
+        <svg width="21" height="21"><use href="#sc-mark"/></svg>
+      </div>
       <div>
-        <div class="fw-bold text-white lh-1">Smart Expense</div>
-        <div class="text-muted-soft" style="font-size:.72rem;">AI Manager</div>
+        <div class="fw-bold text-white lh-1" style="font-family:var(--font-display); font-size:1.05rem;">Sổ Chi</div>
+        <div style="font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); font-weight:700;">Trợ lý chi tiêu AI</div>
       </div>
       <button class="btn-close btn-close-white ms-auto d-lg-none" onclick="toggleSidebar()"></button>
     </div>
 
     <nav class="d-flex flex-column gap-1">
       <a href="{% url 'core:dashboard' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-        <i class="fa-solid fa-gauge-high"></i> Tổng quan
+        <svg><use href="#sc-dashboard"/></svg> Tổng quan
       </a>
       <a href="{% url 'core:expense_list' %}" class="nav-link-custom {% if 'expense' in request.resolver_match.url_name|default:'' %}active{% endif %}">
-        <i class="fa-solid fa-receipt"></i> Chi tiêu
+        <svg><use href="#sc-history"/></svg> Chi tiêu
       </a>
       <a href="{% url 'budgets:budget' %}" class="nav-link-custom {% if request.resolver_match.app_name == 'budgets' %}active{% endif %}">
-        <i class="fa-solid fa-wallet"></i> Ngân sách
+        <svg><use href="#sc-budget"/></svg> Ngân sách
       </a>
       <a href="{% url 'goals:goal_list' %}" class="nav-link-custom {% if request.resolver_match.app_name == 'goals' %}active{% endif %}">
-        <i class="fa-solid fa-bullseye"></i> Mục tiêu tiết kiệm
+        <svg><use href="#sc-goal"/></svg> Mục tiêu tiết kiệm
       </a>
       <a href="{% url 'notifications:list' %}" class="nav-link-custom {% if request.resolver_match.app_name == 'notifications' %}active{% endif %}">
-        <i class="fa-solid fa-bell"></i> Thông báo
+        <svg><use href="#sc-bell"/></svg> Thông báo
         {% if unread_notifications_count %}<span class="badge bg-danger rounded-pill ms-auto">{{ unread_notifications_count }}</span>{% endif %}
       </a>
       <a href="{% url 'accounts:profile' %}" class="nav-link-custom {% if request.resolver_match.app_name == 'accounts' %}active{% endif %}">
-        <i class="fa-solid fa-user"></i> Hồ sơ cá nhân
+        <svg><use href="#sc-user"/></svg> Hồ sơ cá nhân
       </a>
     </nav>
 
     <div class="d-flex flex-column gap-2 mt-4">
-      <a href="{% url 'core:expense_add' %}" class="btn btn-brand rounded-3 py-2"><i class="fa-solid fa-pen me-1"></i> Nhập thủ công</a>
-      <a href="{% url 'core:expense_add_photo' %}" class="btn btn-outline-light rounded-3 py-2"><i class="fa-solid fa-camera me-1"></i> Chụp / Tải ảnh AI</a>
+      <a href="{% url 'core:expense_add' %}" class="btn btn-brand rounded-3 py-2 d-flex align-items-center justify-content-center gap-2">
+        <svg width="16" height="16"><use href="#sc-add"/></svg> Nhập thủ công
+      </a>
+      <a href="{% url 'core:expense_add_photo' %}" class="btn rounded-3 py-2 d-flex align-items-center justify-content-center gap-2" style="background:transparent;border:1px solid rgba(237,231,217,.25); color:#EDE7D9;">
+        <svg width="16" height="16"><use href="#sc-scan"/></svg> Chụp / Tải ảnh AI
+      </a>
     </div>
 
     <div class="mt-auto pt-4">
-      <div class="d-flex align-items-center gap-2 text-muted-soft" style="font-size:.72rem;">
-        <span class="rounded-circle bg-success" style="width:7px;height:7px;"></span> AI đang hoạt động
+      <div class="d-flex align-items-center gap-2" style="font-size:.72rem; color:#8B96B4;">
+        <span class="rounded-circle" style="width:7px;height:7px;background:var(--sage);"></span> AI đang hoạt động
       </div>
       <form action="{% url 'accounts:logout' %}" method="post" class="mt-2">
         {% csrf_token %}
-        <button class="btn btn-sm btn-outline-danger w-100 rounded-3"><i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất</button>
+        <button class="btn btn-sm w-100 rounded-3 d-flex align-items-center justify-content-center gap-2" style="border:1px solid rgba(176,65,62,.5); color:#E8A6A4; background:transparent;">
+          <svg width="14" height="14"><use href="#sc-logout"/></svg> Đăng xuất
+        </button>
       </form>
     </div>
   </aside>
@@ -71,13 +86,13 @@
   <!-- Main -->
   <main class="flex-grow-1" style="min-width:0;">
     <!-- Topbar -->
-    <div class="d-flex align-items-center justify-content-between px-3 px-lg-4 py-3 border-bottom" style="border-color: var(--border) !important;">
+    <div class="d-flex align-items-center justify-content-between px-3 px-lg-4 py-3 border-bottom" style="border-color: var(--border) !important; background:rgba(250,247,240,.7); backdrop-filter:blur(6px); position:sticky; top:0; z-index:30;">
       <button class="btn btn-sm btn-outline-secondary d-lg-none" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
       <div class="d-none d-lg-block"></div>
       <div class="d-flex align-items-center gap-3">
         <div class="dropdown">
           <button class="theme-toggle position-relative" data-bs-toggle="dropdown">
-            <i class="fa-solid fa-bell"></i>
+            <svg><use href="#sc-bell"/></svg>
             {% if unread_notifications_count %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.6rem;">{{ unread_notifications_count }}</span>{% endif %}
           </button>
           <div class="dropdown-menu dropdown-menu-end glass p-2" style="width: 320px;">
@@ -86,7 +101,7 @@
               <a href="{% url 'notifications:list' %}" class="small text-decoration-none">Xem tất cả</a>
             </div>
             {% for n in recent_notifications %}
-            <div class="px-2 py-2 rounded-3 mb-1 {% if not n.is_read %}bg-white bg-opacity-10{% endif %}" style="font-size:.82rem;">
+            <div class="px-2 py-2 rounded-3 mb-1" style="font-size:.82rem; {% if not n.is_read %}background:var(--gold-soft);{% endif %}">
               <div class="d-flex gap-2"><span>{{ n.icon }}</span><span>{{ n.message }}</span></div>
             </div>
             {% empty %}
@@ -94,12 +109,12 @@
             {% endfor %}
           </div>
         </div>
-        <button class="theme-toggle" onclick="toggleTheme()"><i id="themeIcon" class="fa-solid fa-moon"></i></button>
+        <button class="theme-toggle" onclick="toggleTheme()"><svg id="themeIconMoon"><use href="#sc-moon"/></svg><svg id="themeIconSun" style="display:none"><use href="#sc-sun"/></svg></button>
         <a href="{% url 'accounts:profile' %}" class="d-flex align-items-center gap-2 text-decoration-none text-reset">
           {% if user.profile.avatar_url %}
             <img src="{{ user.profile.avatar_url }}" class="avatar-circle">
           {% else %}
-            <div class="avatar-circle d-flex align-items-center justify-content-center bg-brand" style="background:linear-gradient(135deg,#6366f1,#818cf8); color:#fff; font-weight:600;">{{ user.first_name|default:user.username|first|upper }}</div>
+            <div class="avatar-circle d-flex align-items-center justify-content-center" style="background:var(--gold-soft); color:var(--ink); font-weight:700; font-family:var(--font-display);">{{ user.first_name|default:user.username|first|upper }}</div>
           {% endif %}
           <span class="d-none d-md-inline small fw-semibold">{{ user.first_name|default:user.username }}</span>
         </a>
@@ -127,9 +142,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script src="{% static 'js/main.js' %}"></script>
-<script>AOS.init({ duration: 500, once: true });</script>
+<script src="{% static 'js/currency-format.js' %}"></script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

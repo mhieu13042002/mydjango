@@ -6,15 +6,30 @@ import os
 from .models import Expense, Category
 
 
+class VNDAmountField(forms.DecimalField):
+    """
+    Trường số tiền hiển thị/nhận dấu chấm ngăn cách hàng nghìn kiểu Việt Nam
+    (VD: người dùng gõ hoặc gửi lên "100.000" -> parse thành 100000).
+    """
+    def to_python(self, value):
+        if isinstance(value, str):
+            value = value.replace(".", "").replace(",", "").strip()
+        return super().to_python(value)
+
+
 class ExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense
         fields = ["title", "type", "category", "amount", "date", "note"]
+        field_classes = {"amount": VNDAmountField}
         widgets = {
             "title": forms.TextInput(attrs={"class": "form-control", "placeholder": "VD: Ăn trưa quán cơm"}),
             "type": forms.Select(attrs={"class": "form-select"}),
             "category": forms.Select(attrs={"class": "form-select"}),
-            "amount": forms.NumberInput(attrs={"class": "form-control", "min": 0, "step": 1000}),
+            "amount": forms.TextInput(attrs={
+                "class": "form-control js-money-input", "inputmode": "numeric",
+                "autocomplete": "off", "placeholder": "0",
+            }),
             "date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "note": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
         }

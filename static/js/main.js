@@ -16,8 +16,12 @@ function toggleTheme() {
 }
 
 function updateThemeIcon(theme) {
-  const icon = document.getElementById("themeIcon");
-  if (icon) icon.className = theme === "dark" ? "fa-solid fa-moon" : "fa-solid fa-sun";
+  const moonIcon = document.getElementById("themeIconMoon");
+  const sunIcon = document.getElementById("themeIconSun");
+  if (!moonIcon || !sunIcon) return;
+  // Ở chế độ dark, hiện icon mặt trời (bấm để chuyển sang sáng) và ngược lại
+  moonIcon.style.display = theme === "dark" ? "none" : "block";
+  sunIcon.style.display = theme === "dark" ? "block" : "none";
 }
 
 // CSRF helper cho AJAX
