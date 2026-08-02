@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == 'edit' %}Sửa{% else %}Thêm{% endif %} chi tiêu · Smart Expense{% endblock %}
+{% block content %}
+<div class="mx-auto" style="max-width:560px;" data-aos="fade-up">
+  <h4 class="fw-bold mb-1">{% if mode == 'edit' %}Sửa giao dịch{% else %}Thêm giao dịch mới{% endif %}</h4>
+  <p class="text-muted-soft small mb-4">AI sẽ tự động gợi ý danh mục khi bạn nhập tên khoản chi.</p>
+
+  <form method="post" class="glass p-4">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label small text-muted-soft">Loại giao dịch</label>
+      {{ form.type }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label small text-muted-soft">Tên khoản {% if mode != 'edit' %}<span class="text-danger">*</span>{% endif %}</label>
+      {{ form.title }}
+      <div id="aiSuggestBox" class="d-none mt-2 small px-3 py-2 rounded-3" style="background:rgba(99,102,241,.1); border:1px solid rgba(99,102,241,.3);">
+        🤖 <span id="aiSuggestText"></span> <a href="javascript:void(0)" id="aiApplyBtn" class="text-decoration-none">Áp dụng</a>
+      </div>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-6">
+        <label class="form-label small text-muted-soft">Danh mục</label>
+        {{ form.category }}
+      </div>
+      <div class="col-6">
+        <label class="form-label small text-muted-soft">Số tiền (đ)</label>
+        {{ form.amount }}
+      </div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label small text-muted-soft">Ngày</label>
+      {{ form.date }}
+    </div>
+    <div class="mb-4">
+      <label class="form-label small text-muted-soft">Ghi chú</label>
+      {{ form.note }}
+    </div>
+    {% for field in form %}
+      {% for error in field.errors %}<div class="text-danger small mb-2">{{ field.label }}: {{ error }}</div>{% endfor %}
+    {% endfor %}
+    <div class="d-flex gap-2">
+      <a href="{% url 'core:expense_list' %}" class="btn btn-outline-light flex-fill rounded-3">Hủy</a>
+      <button type="submit" class="btn btn-brand flex-fill rounded-3">{% if mode == 'edit' %}Lưu thay đổi{% else %}Thêm giao dịch{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const titleInput = document.getElementById('id_title');
+const categorySelect = document.getElementById('id_category');
+const box = document.getElementById('aiSuggestBox');
+const text = document.getElementById('aiSuggestText');
+let debounceTimer;
+
+titleInput?.addEventListener('input', () => {
+  clearTimeout(debounceTimer);
+  const val = titleInput.value.trim();
+  if (val.length < 2) { box.classList.add('d-none'); return; }
+  debounceTimer = setTimeout(() => {
+    const type = document.getElementById('id_type').value;
+    fetch(`{% url 'core:api_suggest_category' %}?description=${encodeURIComponent(val)}&type=${type}`)
+      .then(r => r.json()).then(d => {
+        if (d.category_id) {
+          text.textContent = `Có thể đây là "${d.category}" (${(d.confidence*100).toFixed(0)}% tin cậy)`;
+          box.dataset.categoryId = d.category_id;
+          box.classList.remove('d-none');
+        } else box.classList.add('d-none');
+      }).catch(() => box.classList.add('d-none'));
+  }, 400);
+});
+document.getElementById('aiApplyBtn')?.addEventListener('click', () => {
+  if (box.dataset.categoryId) categorySelect.value = box.dataset.categoryId;
+  box.classList.add('d-none');
+});
+</script>
+{% endblock %}

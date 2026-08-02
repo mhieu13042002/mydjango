@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Thông báo · Smart Expense{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4" data-aos="fade-up">
+  <h3 class="fw-bold mb-0">Thông báo</h3>
+  <button class="btn btn-outline-light btn-sm rounded-3" onclick="markAllRead()">Đánh dấu đã đọc tất cả</button>
+</div>
+
+<div class="glass p-2" data-aos="fade-up">
+  {% for n in notifications %}
+  <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-1 notif-item" data-id="{{ n.pk }}"
+       style="{% if not n.is_read %}background:rgba(99,102,241,.08);{% endif %}">
+    <span class="fs-5">{{ n.icon }}</span>
+    <div class="flex-grow-1">
+      <div class="fw-semibold small">{{ n.title }}</div>
+      <div class="text-muted-soft small">{{ n.message }}</div>
+      <div class="text-muted-soft" style="font-size:.7rem;">{{ n.created_at|date:"d/m/Y H:i" }}</div>
+    </div>
+    {% if not n.is_read %}
+    <button class="btn btn-sm btn-outline-light rounded-3" onclick="markRead({{ n.pk }}, this)">Đã đọc</button>
+    {% endif %}
+  </div>
+  {% empty %}
+  <div class="text-center text-muted-soft py-5">
+    <div class="fs-1 mb-2">🔔</div>
+    Chưa có thông báo nào.
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function markRead(id, btn) {
+  fetch(`/thong-bao/${id}/da-doc/`, { method: 'POST', headers: { 'X-CSRFToken': CSRF_TOKEN } })
+    .then(r => r.json()).then(d => { if (d.ok) { btn.closest('.notif-item').style.background = 'transparent'; btn.remove(); } });
+}
+function markAllRead() {
+  fetch("{% url 'notifications:mark_all_read' %}", { method: 'POST', headers: { 'X-CSRFToken': CSRF_TOKEN } })
+    .then(r => r.json()).then(d => { if (d.ok) location.reload(); });
+}
+</script>
+{% endblock %}

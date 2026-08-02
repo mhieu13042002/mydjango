@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Mục tiêu tiết kiệm · Smart Expense{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4" data-aos="fade-up">
+  <div>
+    <h3 class="fw-bold mb-0">Mục tiêu tiết kiệm</h3>
+    <div class="text-muted-soft small">AI tính sẵn số tiền bạn cần tiết kiệm mỗi tháng/ngày để đạt mục tiêu.</div>
+  </div>
+  <a href="{% url 'goals:goal_add' %}" class="btn btn-brand rounded-3"><i class="fa-solid fa-plus me-1"></i> Tạo mục tiêu</a>
+</div>
+
+<div class="row g-3">
+  {% for g in goals %}
+  <div class="col-md-6 col-xl-4" data-aos="fade-up">
+    <a href="{% url 'goals:goal_detail' g.pk %}" class="text-decoration-none text-reset">
+      <div class="glass p-4 h-100">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div class="d-flex align-items-center gap-2"><span class="fs-4">{{ g.icon }}</span><strong>{{ g.name }}</strong></div>
+          {% if g.is_completed %}<span class="badge badge-soft-success">Hoàn thành 🎉</span>{% endif %}
+        </div>
+        <div class="progress-thin mb-2">
+          <div class="progress-thin" style="width:{{ g.progress_pct }}%; background:linear-gradient(90deg,#6366f1,#14b8a6);"></div>
+        </div>
+        <div class="d-flex justify-content-between small text-muted-soft mb-3">
+          <span>{{ g.current_amount|floatformat:0 }}đ / {{ g.target_amount|floatformat:0 }}đ</span>
+          <span>{{ g.progress_pct }}%</span>
+        </div>
+        {% if not g.is_completed %}
+        <div class="small text-muted-soft"><i class="fa-regular fa-calendar me-1"></i> Còn {{ g.days_left }} ngày · cần {{ g.monthly_required|floatformat:0 }}đ/tháng</div>
+        {% endif %}
+      </div>
+    </a>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center text-muted-soft py-5">
+    <div class="fs-1 mb-2">🎯</div>
+    Chưa có mục tiêu tiết kiệm nào. <a href="{% url 'goals:goal_add' %}">Tạo ngay →</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

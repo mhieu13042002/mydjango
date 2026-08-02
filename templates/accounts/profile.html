@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Hồ sơ cá nhân · Smart Expense{% endblock %}
+{% block content %}
+<div class="row g-4" data-aos="fade-up">
+  <div class="col-lg-4">
+    <div class="glass p-4 text-center">
+      {% if profile.avatar_url %}
+        <img src="{{ profile.avatar_url }}" class="rounded-circle mb-3" style="width:96px;height:96px;object-fit:cover;">
+      {% else %}
+        <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:96px;height:96px;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-size:2rem;font-weight:700;">
+          {{ user.first_name|default:user.username|first|upper }}
+        </div>
+      {% endif %}
+      <h5 class="fw-bold mb-0">{{ user.first_name|default:user.username }}</h5>
+      <div class="text-muted-soft small mb-3">{{ user.email }}</div>
+      <a href="{% url 'accounts:change_password' %}" class="btn btn-outline-light btn-sm rounded-3 w-100"><i class="fa-solid fa-key me-1"></i> Đổi mật khẩu</a>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="glass p-4">
+      <h5 class="fw-bold mb-3">Cập nhật thông tin</h5>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label small text-muted-soft">Họ và tên</label>
+            {{ form.first_name }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small text-muted-soft">Email</label>
+            {{ form.email }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small text-muted-soft">Số điện thoại</label>
+            {{ form.phone }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small text-muted-soft">Thu nhập ước tính/tháng</label>
+            {{ form.monthly_income_estimate }}
+          </div>
+          <div class="col-12">
+            <label class="form-label small text-muted-soft">Ảnh đại diện</label>
+            {{ form.avatar }}
+          </div>
+        </div>
+        <button type="submit" class="btn btn-brand rounded-3 px-4 mt-4"><i class="fa-solid fa-check me-1"></i> Lưu thay đổi</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ goal.name }} · Smart Expense{% endblock %}
+{% block content %}
+<div class="row g-4" data-aos="fade-up">
+  <div class="col-lg-7">
+    <div class="glass p-4">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div class="d-flex align-items-center gap-2"><span class="fs-2">{{ goal.icon }}</span><h4 class="fw-bold mb-0">{{ goal.name }}</h4></div>
+        <form method="post" action="{% url 'goals:goal_delete' goal.pk %}" onsubmit="return confirmAction('Xoá mục tiêu này?')">
+          {% csrf_token %}
+          <button class="btn btn-sm btn-outline-danger rounded-3"><i class="fa-solid fa-trash"></i></button>
+        </form>
+      </div>
+
+      <div class="progress-thin mb-2" style="height:12px;">
+        <div class="progress-thin" style="height:12px; width:{{ goal.progress_pct }}%; background:linear-gradient(90deg,#6366f1,#14b8a6);"></div>
+      </div>
+      <div class="d-flex justify-content-between mb-4">
+        <span class="fw-bold">{{ goal.current_amount|floatformat:0 }}đ</span>
+        <span class="text-muted-soft">/ {{ goal.target_amount|floatformat:0 }}đ</span>
+      </div>
+
+      {% if not goal.is_completed %}
+      <div class="row g-2 mb-4">
+        <div class="col-4 text-center">
+          <div class="text-muted-soft small">Còn lại</div>
+          <div class="fw-bold">{{ goal.days_left }} ngày</div>
+        </div>
+        <div class="col-4 text-center">
+          <div class="text-muted-soft small">Cần/tháng</div>
+          <div class="fw-bold">{{ goal.monthly_required|floatformat:0 }}đ</div>
+        </div>
+        <div class="col-4 text-center">
+          <div class="text-muted-soft small">Cần/ngày</div>
+          <div class="fw-bold">{{ goal.daily_required|floatformat:0 }}đ</div>
+        </div>
+      </div>
+
+      <h6 class="fw-bold mb-2">Nạp thêm tiền tiết kiệm</h6>
+      <form method="post">
+        {% csrf_token %}
+        <div class="row g-2">
+          <div class="col-md-4">{{ form.amount }}</div>
+          <div class="col-md-4">{{ form.date }}</div>
+          <div class="col-md-4">{{ form.note }}</div>
+        </div>
+        <button type="submit" class="btn btn-brand rounded-3 mt-3 px-4">Nạp tiền</button>
+      </form>
+      {% else %}
+      <div class="alert alert-success rounded-4">🎉 Chúc mừng! Bạn đã hoàn thành mục tiêu này.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="glass p-4">
+      <h6 class="fw-bold mb-3">Lịch sử nạp tiền</h6>
+      {% for c in contributions %}
+      <div class="d-flex justify-content-between py-2 border-bottom" style="border-color: var(--border) !important;">
+        <div>
+          <div class="small fw-semibold">{{ c.date|date:"d/m/Y" }}</div>
+          {% if c.note %}<div class="text-muted-soft" style="font-size:.75rem;">{{ c.note }}</div>{% endif %}
+        </div>
+        <div class="fw-bold text-success">+{{ c.amount|floatformat:0 }}đ</div>
+      </div>
+      {% empty %}
+      <div class="text-center text-muted-soft small py-4">Chưa có lần nạp tiền nào.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

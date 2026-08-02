@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Thêm chi tiêu bằng ảnh AI · Smart Expense{% endblock %}
+{% block content %}
+<div class="mx-auto" style="max-width:640px;" data-aos="fade-up">
+  <h4 class="fw-bold mb-1"><i class="fa-solid fa-camera me-2"></i>Thêm chi tiêu bằng ảnh</h4>
+  <p class="text-muted-soft small mb-4">Tải ảnh hoá đơn / vật dụng lên, AI sẽ tự nhận diện và gợi ý danh mục cho bạn.</p>
+
+  <!-- Bước 1: upload -->
+  <div id="uploadStep" class="glass p-4">
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <i class="fa-solid fa-cloud-arrow-up fs-1 text-muted-soft mb-2"></i>
+      <div class="fw-semibold">Nhấn để chọn ảnh hoặc kéo thả vào đây</div>
+      <div class="text-muted-soft small mt-1">Hỗ trợ JPG, PNG, WEBP · tối đa 8MB</div>
+      <input type="file" id="fileInput" accept="image/*" capture="environment" class="d-none">
+    </div>
+  </div>
+
+  <!-- Loading skeleton -->
+  <div id="loadingStep" class="glass p-4 d-none">
+    <div class="skeleton mb-3" style="height:220px;"></div>
+    <div class="skeleton mb-2" style="height:16px;width:60%;"></div>
+    <div class="skeleton" style="height:16px;width:40%;"></div>
+    <div class="text-center text-muted-soft small mt-3"><i class="fa-solid fa-brain fa-beat me-1"></i> AI đang phân tích ảnh...</div>
+  </div>
+
+  <!-- Bước 2: preview + confirm -->
+  <div id="previewStep" class="glass p-4 d-none">
+    <img id="previewImg" class="w-100 rounded-4 mb-3" style="max-height:320px;object-fit:cover;">
+
+    <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded-3" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);">
+      <i class="fa-solid fa-robot"></i>
+      <div class="small">
+        AI nhận diện: <strong id="detectedLabel">-</strong>
+        <span id="confidenceBadge" class="badge badge-soft-info ms-1"></span>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-12">
+        <label class="form-label small text-muted-soft">Tên khoản chi</label>
+        <input type="text" id="titleInput" class="form-control" placeholder="VD: Ăn trưa, đổ xăng...">
+      </div>
+      <div class="col-6">
+        <label class="form-label small text-muted-soft">Danh mục <span class="text-danger">*</span></label>
+        <select id="categorySelect" class="form-select"></select>
+        <div class="form-text text-muted-soft" style="font-size:.72rem;">AI có thể đoán sai — bạn đổi lại nếu cần.</div>
+      </div>
+      <div class="col-6">
+        <label class="form-label small text-muted-soft">Số tiền (đ) <span class="text-danger">*</span></label>
+        <input type="number" id="amountInput" class="form-control" min="0" step="1000" placeholder="65000" autofocus>
+      </div>
+      <div class="col-6">
+        <label class="form-label small text-muted-soft">Ngày</label>
+        <input type="date" id="dateInput" class="form-control">
+      </div>
+      <div class="col-6">
+        <label class="form-label small text-muted-soft">Ghi chú</label>
+        <input type="text" id="noteInput" class="form-control">
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-light flex-fill rounded-3" onclick="resetForm()">Huỷ / Chọn ảnh khác</button>
+      <button class="btn btn-brand flex-fill rounded-3" id="saveBtn" onclick="saveExpense()"><i class="fa-solid fa-check me-1"></i> Lưu chi tiêu</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const uploadStep = document.getElementById('uploadStep');
+const loadingStep = document.getElementById('loadingStep');
+const previewStep = document.getElementById('previewStep');
+let currentImageId = null;
+
+['dragover', 'dragleave', 'drop'].forEach(evt => {
+  dropzone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropzone.classList.toggle('dragover', evt === 'dragover');
+    if (evt === 'drop' && e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      handleFile();
+    }
+  });
+});
+fileInput.addEventListener('change', handleFile);
+
+function handleFile() {
+  const file = fileInput.files[0];
+  if (!file) return;
+  uploadStep.classList.add('d-none');
+  loadingStep.classList.remove('d-none');
+
+  const formData = new FormData();
+  formData.append('image', file);
+
+  fetch("{% url 'core:api_analyze_image' %}", {
+    method: 'POST', body: formData,
+    headers: { 'X-CSRFToken': CSRF_TOKEN },
+  }).then(r => r.json()).then(d => {
+    loadingStep.classList.add('d-none');
+    if (!d.ok) { showToast('Không thể phân tích ảnh: ' + JSON.stringify(d.errors), 'error'); uploadStep.classList.remove('d-none'); return; }
+
+    currentImageId = d.image_id;
+    document.getElementById('previewImg').src = d.image_url;
+    document.getElementById('detectedLabel').textContent = d.has_detection ? d.detected_label : 'Không xác định rõ';
+    document.getElementById('confidenceBadge').textContent = d.has_detection ? `${(d.confidence*100).toFixed(0)}% tin cậy` : 'Hãy tự chọn danh mục';
+
+    const select = document.getElementById('categorySelect');
+    select.innerHTML = '';
+    d.categories.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = `${c.icon} ${c.name}`;
+      if (c.id === d.suggested_category_id) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    document.getElementById('titleInput').value = d.suggested_category_name || '';
+    document.getElementById('dateInput').value = new Date().toISOString().slice(0, 10);
+    previewStep.classList.remove('d-none');
+  }).catch(() => {
+    loadingStep.classList.add('d-none'); uploadStep.classList.remove('d-none');
+    showToast('Có lỗi xảy ra khi tải ảnh lên.', 'error');
+  });
+}
+
+function resetForm() {
+  fileInput.value = '';
+  previewStep.classList.add('d-none');
+  uploadStep.classList.remove('d-none');
+  currentImageId = null;
+}
+
+function saveExpense() {
+  const amount = document.getElementById('amountInput').value;
+  const categoryId = document.getElementById('categorySelect').value;
+  if (!amount || amount <= 0) { showToast('Vui lòng nhập số tiền hợp lệ.', 'warning'); return; }
+  if (!categoryId) { showToast('Vui lòng chọn danh mục.', 'warning'); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang lưu...';
+
+  const formData = new FormData();
+  formData.append('image_id', currentImageId);
+  formData.append('amount', amount);
+  formData.append('category_id', categoryId);
+  formData.append('title', document.getElementById('titleInput').value || 'Chi tiêu từ ảnh');
+  formData.append('date', document.getElementById('dateInput').value);
+  formData.append('note', document.getElementById('noteInput').value);
+
+  fetch("{% url 'core:api_save_photo_expense' %}", {
+    method: 'POST', body: formData, headers: { 'X-CSRFToken': CSRF_TOKEN },
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      showToast('Đã lưu khoản chi tiêu thành công!', 'success');
+      if (d.anomaly) {
+        setTimeout(() => showToast(`⚠️ Cao hơn trung bình ${d.anomaly.pct_over.toFixed(0)}%`, 'warning'), 600);
+      }
+      setTimeout(() => window.location.href = d.redirect_url, 900);
+    } else {
+      showToast(d.error || 'Có lỗi xảy ra.', 'error');
+      btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Lưu chi tiêu';
+    }
+  }).catch(() => {
+    showToast('Có lỗi xảy ra khi lưu.', 'error');
+    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Lưu chi tiêu';
+  });
+}
+</script>
+{% endblock %}

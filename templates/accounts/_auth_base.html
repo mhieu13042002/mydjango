@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block auth_content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center p-3">
+  <div class="glass rounded-4 p-4 p-md-5" style="width: 100%; max-width: 420px;" data-aos="fade-up">
+    <div class="text-center mb-4">
+      <div class="d-inline-flex align-items-center justify-content-center rounded-4 mb-2" style="width:56px;height:56px;background:linear-gradient(135deg,#6366f1,#14b8a6);font-size:1.6rem;">🤖</div>
+      <h4 class="fw-bold mb-0">Smart Expense</h4>
+      <div class="text-muted-soft small">Quản lý chi tiêu thông minh với AI</div>
+    </div>
+    {% block auth_form %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

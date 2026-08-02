@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Chi tiêu · Smart Expense{% endblock %}
+{% block content %}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4" data-aos="fade-up">
+  <div>
+    <h3 class="fw-bold mb-0">Lịch sử chi tiêu</h3>
+    <div class="text-muted-soft small">Tìm kiếm, lọc và quản lý toàn bộ giao dịch của bạn.</div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'core:expense_add_photo' %}" class="btn btn-outline-light rounded-3"><i class="fa-solid fa-camera me-1"></i> Ảnh AI</a>
+    <a href="{% url 'core:expense_add' %}" class="btn btn-brand rounded-3"><i class="fa-solid fa-plus me-1"></i> Thêm giao dịch</a>
+  </div>
+</div>
+
+<form method="get" class="glass p-3 mb-4" data-aos="fade-up">
+  <div class="row g-2 align-items-center">
+    <div class="col-md-3">
+      <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm" placeholder="🔍 Tìm theo tên, ghi chú...">
+    </div>
+    <div class="col-6 col-md-2">
+      <select name="type" onchange="this.form.submit()" class="form-select form-select-sm">
+        <option value="" {% if not type_filter %}selected{% endif %}>Tất cả loại</option>
+        <option value="income" {% if type_filter == 'income' %}selected{% endif %}>Thu nhập</option>
+        <option value="expense" {% if type_filter == 'expense' %}selected{% endif %}>Chi tiêu</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <select name="category" onchange="this.form.submit()" class="form-select form-select-sm">
+        <option value="">Tất cả danh mục</option>
+        {% for c in categories %}<option value="{{ c.id }}" {% if category_id == c.id|stringformat:"s" %}selected{% endif %}>{{ c.icon }} {{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <select name="date_type" onchange="this.form.submit()" class="form-select form-select-sm">
+        <option value="" {% if not date_filter_type %}selected{% endif %}>Mọi thời điểm</option>
+        <option value="year" {% if date_filter_type == 'year' %}selected{% endif %}>Theo năm</option>
+        <option value="month" {% if date_filter_type == 'month' %}selected{% endif %}>Theo tháng</option>
+      </select>
+    </div>
+    {% if date_filter_type == 'month' %}
+    <div class="col-3 col-md-1">
+      <input type="number" name="month" min="1" max="12" value="{{ month }}" class="form-control form-control-sm" placeholder="Tháng">
+    </div>
+    {% endif %}
+    {% if date_filter_type %}
+    <div class="col-3 col-md-1">
+      <input type="number" name="year" value="{{ year }}" class="form-control form-control-sm" placeholder="Năm">
+    </div>
+    {% endif %}
+    <div class="col-12 col-md-1">
+      <button type="submit" class="btn btn-brand btn-sm w-100 rounded-3">Lọc</button>
+    </div>
+  </div>
+  <div class="row g-2 mt-1">
+    <div class="col-6 col-md-3">
+      <input type="number" name="min_amount" value="{{ min_amount }}" class="form-control form-control-sm" placeholder="Số tiền từ...">
+    </div>
+    <div class="col-6 col-md-3">
+      <input type="number" name="max_amount" value="{{ max_amount }}" class="form-control form-control-sm" placeholder="Số tiền đến...">
+    </div>
+  </div>
+</form>
+
+<div class="row g-3">
+  {% for e in page_obj %}
+  <div class="col-md-6 col-xl-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|divisibleby:3|yesno:'0,50' }}">
+    <div class="expense-card h-100">
+      {% if e.image.original_image %}
+        <img src="{{ e.image.annotated_image.url|default:e.image.original_image.url }}" class="w-100" style="height:140px;object-fit:cover;">
+      {% endif %}
+      <div class="p-3">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="d-flex align-items-center justify-content-center rounded-circle" style="width:34px;height:34px;background:{{ e.category.color }}22;">{{ e.category.icon }}</span>
+            <div>
+              <div class="fw-semibold small">{{ e.title }}</div>
+              <div class="text-muted-soft" style="font-size:.72rem;">{{ e.category.name }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted-soft small">{{ e.date|date:"d/m/Y" }}</span>
+          <span class="fw-bold {% if e.type == 'income' %}text-success{% else %}text-danger{% endif %}">
+            {% if e.type == 'income' %}+{% else %}-{% endif %}{{ e.amount|floatformat:0 }}đ
+          </span>
+        </div>
+        {% if e.is_special %}<span class="badge badge-soft-info mt-2">Khoản chi đặc biệt</span>{% endif %}
+        <div class="d-flex gap-2 mt-3">
+          <a href="{% url 'core:expense_detail' e.pk %}" class="btn btn-sm btn-outline-light flex-fill rounded-3"><i class="fa-solid fa-eye"></i></a>
+          <a href="{% url 'core:expense_edit' e.pk %}" class="btn btn-sm btn-outline-light flex-fill rounded-3"><i class="fa-solid fa-pen"></i></a>
+          <form method="post" action="{% url 'core:expense_delete' e.pk %}" class="flex-fill" onsubmit="return confirmAction('Xoá giao dịch này?')">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger w-100 rounded-3"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center text-muted-soft py-5">
+    <div class="fs-1 mb-2">📭</div>
+    Không có giao dịch nào phù hợp bộ lọc.
+  </div>
+  {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<nav class="mt-4">
+  <ul class="pagination justify-content-center">
+    {% if page_obj.has_previous %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search }}&type={{ type_filter }}&category={{ category_id }}">‹</a></li>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+    <li class="page-item {% if num == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ num }}&q={{ search }}&type={{ type_filter }}&category={{ category_id }}">{{ num }}</a></li>
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search }}&type={{ type_filter }}&category={{ category_id }}">›</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+{% endblock %}
