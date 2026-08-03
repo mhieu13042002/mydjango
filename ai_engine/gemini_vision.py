@@ -15,6 +15,16 @@ viện ngoài) để giảm rủi ro khi deploy.
 An toàn khi lỗi: mọi lỗi (thiếu key, mất mạng, quá quota, JSON không hợp lệ...)
 đều trả về None thay vì raise exception — nơi gọi sẽ tự động dùng lại model
 offline cũ làm phương án dự phòng.
+
+LƯU Ý QUAN TRỌNG VỀ VÒNG ĐỜI MODEL: Google khai tử model Gemini theo tên cụ
+thể khá thường xuyên — hệ thống này đã 2 lần bị ảnh hưởng (gemini-2.0-flash
+shutdown 01/06/2026, rồi gemini-2.5-flash cũng bị chặn với user mới) chỉ trong
+vài tháng. Vì vậy thay vì hardcode một model duy nhất, danh sách GEMINI_MODELS
+bên dưới liệt kê VÀI model theo thứ tự ưu tiên — hễ model nào báo lỗi 404 (
+không tồn tại/không còn hỗ trợ), code tự động thử model kế tiếp trong danh
+sách trước khi bỏ cuộc. Nếu tương lai TẤT CẢ model trong danh sách đều bị lỗi
+404, vào https://ai.google.dev/gemini-api/docs/pricing xem model mới nhất
+đang "Free with rate limits" và thêm vào đầu danh sách.
 """
 import os
 import json
@@ -27,15 +37,12 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-# LƯU Ý QUAN TRỌNG: Google định kỳ "nghỉ hưu" (deprecate/shutdown) các model
-# Gemini theo tên cụ thể — model cũ dùng ở đây trước đó (gemini-2.0-flash) đã
-# bị Google shutdown từ 01/06/2026, khiến MỌI request đều lỗi 404 nhưng bị
-# code nuốt lỗi âm thầm rồi rớt về model offline cũ (đây chính là lý do AI vẫn
-# nhận diện "ngu ngu" dù đã cấu hình key đúng). Nếu sau này Gemini lại báo lỗi
-# tương tự, hãy kiểm tra trang https://ai.google.dev/gemini-api/docs/pricing
-# xem model bên dưới còn được hỗ trợ không và đổi lại cho đúng.
-GEMINI_MODEL = "gemini-2.5-flash"
-GEMINI_ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+GEMINI_MODELS = [
+    "gemini-3.6-flash",       # GA ổn định mới nhất (21/07/2026)
+    "gemini-2.5-flash-lite",  # dự phòng — vẫn free tính đến 08/2026
+    "gemini-3.5-flash-lite",  # dự phòng — vẫn free tính đến 08/2026
+]
+_ENDPOINT_TPL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 # Ngưỡng tin cậy tối thiểu để tự động điền sẵn danh mục (giống tinh thần với
 # model offline cũ — thà im lặng còn hơn tự chọn liều một danh mục sai).
@@ -48,12 +55,35 @@ def is_configured():
     return bool(getattr(settings, "GEMINI_API_KEY", ""))
 
 
+def _call_gemini(model, api_key, payload, timeout):
+    """Gọi 1 model cụ thể. Trả (raw_json, None) nếu thành công,
+    hoặc (None, "retry") nếu nên thử model kế tiếp (404 - model không tồn
+    tại/hết hỗ trợ), hoặc (None, "stop") nếu là lỗi khác không đáng thử lại
+    (sai key, hết quota, mất mạng...)."""
+    req = urllib.request.Request(
+        f"{_ENDPOINT_TPL.format(model=model)}?key={api_key}",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8")), None
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")[:500]
+        logger.error("Gemini API (model=%s) lỗi HTTP %s: %s", model, e.code, body)
+        return None, ("retry" if e.code == 404 else "stop")
+    except (urllib.error.URLError, TimeoutError, ValueError, OSError) as e:
+        logger.error("Gemini API (model=%s) lỗi kết nối/parse: %s", model, e)
+        return None, "stop"
+
+
 def analyze_expense_image(image_path, category_names, timeout=20):
     """Gửi ảnh lên Gemini kèm danh sách danh mục thật của người dùng, nhận về
     gợi ý phân loại + đọc số tiền/tên khoản nếu có.
 
-    Trả về None nếu chưa cấu hình GEMINI_API_KEY hoặc có lỗi bất kỳ khi gọi API
-    — để nơi gọi tự chuyển sang dùng model offline dự phòng.
+    Trả về None nếu chưa cấu hình GEMINI_API_KEY hoặc mọi model đều lỗi — để
+    nơi gọi tự chuyển sang dùng model offline dự phòng.
     """
     api_key = getattr(settings, "GEMINI_API_KEY", "")
     if not api_key or not category_names:
@@ -93,6 +123,7 @@ def analyze_expense_image(image_path, category_names, timeout=20):
 
     payload = {
         "contents": [{
+            "role": "user",
             "parts": [
                 {"text": prompt},
                 {"inline_data": {"mime_type": mime_type, "data": image_b64}},
@@ -104,22 +135,21 @@ def analyze_expense_image(image_path, category_names, timeout=20):
         },
     }
 
-    req = urllib.request.Request(
-        f"{GEMINI_ENDPOINT}?key={api_key}",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            raw = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="ignore")[:500]
-        logger.error("Gemini API lỗi HTTP %s khi phân tích ảnh: %s", e.code, body)
+    raw = None
+    for model in GEMINI_MODELS:
+        raw, action = _call_gemini(model, api_key, payload, timeout)
+        if raw is not None:
+            break
+        if action == "stop":
+            return None
+        # action == "retry" -> thử model kế tiếp trong danh sách
+    else:
+        logger.error("Tất cả model trong GEMINI_MODELS đều lỗi 404 — cần cập nhật danh sách model.")
         return None
-    except (urllib.error.URLError, TimeoutError, ValueError, OSError) as e:
-        logger.error("Gemini API lỗi kết nối/parse khi phân tích ảnh: %s", e)
+
+    if not raw.get("candidates"):
+        block_reason = raw.get("promptFeedback", {}).get("blockReason", "không rõ")
+        logger.error("Gemini không trả về candidates nào (có thể bị chặn bởi bộ lọc an toàn) — blockReason=%s | raw=%s", block_reason, raw)
         return None
 
     try:
