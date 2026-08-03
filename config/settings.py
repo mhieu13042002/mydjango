@@ -165,8 +165,14 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
 ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"]
 MAX_IMAGE_SIZE_MB = 8
 
-# Đường dẫn model AI nhận diện ảnh (offline, mã nguồn mở)
+# Đường dẫn model AI nhận diện ảnh (offline, mã nguồn mở) — dùng làm phương án
+# dự phòng khi chưa cấu hình Gemini hoặc khi gọi Gemini thất bại.
 AI_MODEL_DIR = BASE_DIR / "ai_models"
+
+# Gemini API (Google AI Studio) — nhận diện ảnh chi tiêu chính xác hơn nhiều
+# so với model offline cũ (đọc được cả chữ trên hoá đơn, hiểu ngữ cảnh món ăn
+# Việt Nam...). Để trống thì hệ thống tự động dùng lại model offline cũ.
+GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
 
 # --------------------------------------------------------- Production ------
 # Railway (và các nền tảng tương tự) đặt sau reverse proxy HTTPS -> Django

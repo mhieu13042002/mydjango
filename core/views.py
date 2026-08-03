@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST, require_GET
 from .models import Category, Expense, ExpenseImage, AIAnalysis
 from .forms import ExpenseForm, ExpenseImageUploadForm, models_q
 from .services import check_budget_after_expense, check_anomaly_after_expense
-from ai_engine import analytics, categorizer, image_recognition, image_annotate
+from ai_engine import analytics, categorizer, image_recognition, image_annotate, gemini_vision
 
 
 # --------------------------------------------------------------- helpers ---
@@ -179,9 +179,14 @@ def expense_add_photo_view(request):
 @login_required
 @require_POST
 def api_analyze_image(request):
-    """Nhận ảnh, chạy AI nhận diện vật thể, trả về preview + gợi ý danh mục.
+    """Nhận ảnh, chạy AI nhận diện, trả về preview + gợi ý danh mục.
     Ảnh gốc được lưu tạm ngay (ExpenseImage chưa gắn Expense) để bước sau
-    dùng lại mà không phải upload lại."""
+    dùng lại mà không phải upload lại.
+
+    Ưu tiên gọi Gemini Vision (chính xác hơn, đọc được chữ trên hoá đơn) nếu
+    đã cấu hình GEMINI_API_KEY; nếu chưa cấu hình hoặc Gemini gọi lỗi (mất
+    mạng, hết quota...), tự động dùng lại model offline cũ để app không bao
+    giờ bị đứng vì lý do bên thứ ba."""
     form = ExpenseImageUploadForm(request.POST, request.FILES)
     if not form.is_valid():
         return JsonResponse({"ok": False, "errors": form.errors}, status=400)
@@ -189,8 +194,22 @@ def api_analyze_image(request):
     image_obj = ExpenseImage.objects.create(user=request.user, original_image=form.cleaned_data["image"])
     image_path = image_obj.original_image.path
 
-    result = image_recognition.recognize_image(image_path)
-    label_vi = image_recognition.label_to_vietnamese(result["label"])
+    expense_categories = list(_user_categories(request.user, "expense"))
+    category_names = [c.name for c in expense_categories]
+
+    gemini_result = gemini_vision.analyze_expense_image(image_path, category_names)
+
+    suggested_title = ""
+    suggested_amount = None
+
+    if gemini_result is not None:
+        result = gemini_result
+        label_vi = result["label"] or "Không xác định rõ"
+        suggested_title = result.get("suggested_title") or ""
+        suggested_amount = result.get("suggested_amount")
+    else:
+        result = image_recognition.recognize_image(image_path)
+        label_vi = image_recognition.label_to_vietnamese(result["label"])
 
     suggested_category = None
     if result["category"]:
@@ -206,7 +225,7 @@ def api_analyze_image(request):
         raw_result=result,
     )
 
-    categories = [{"id": c.id, "name": c.name, "icon": c.icon} for c in _user_categories(request.user, "expense")]
+    categories = [{"id": c.id, "name": c.name, "icon": c.icon} for c in expense_categories]
 
     return JsonResponse({
         "ok": True,
@@ -217,8 +236,12 @@ def api_analyze_image(request):
         "confidence": round(result["confidence"], 2),
         "suggested_category_id": suggested_category.id if suggested_category else None,
         "suggested_category_name": suggested_category.name if suggested_category else None,
+        "suggested_title": suggested_title,
+        "suggested_amount": suggested_amount,
         "categories": categories,
         "has_detection": bool(result["label"]),
+        "auto_suggest": bool(result.get("auto_suggest")),
+        "ai_source": result.get("source", "offline"),
     })
 
 

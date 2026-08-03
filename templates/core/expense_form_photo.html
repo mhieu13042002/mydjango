@@ -7,12 +7,25 @@
 
   <!-- Bước 1: upload -->
   <div id="uploadStep" class="glass p-4">
-    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-      <svg width="34" height="34" class="mb-2 text-muted-soft"><use href="#sc-add"/></svg>
-      <div class="fw-semibold">Nhấn để chọn ảnh hoặc kéo thả vào đây</div>
-      <div class="text-muted-soft small mt-1">Hỗ trợ JPG, PNG, WEBP · tối đa 8MB</div>
-      <input type="file" id="fileInput" accept="image/*" capture="environment" class="d-none">
+    <div class="row g-3">
+      <div class="col-sm-6">
+        <div class="dropzone h-100" id="cameraZone" onclick="document.getElementById('cameraInput').click()">
+          <svg width="30" height="30" class="mb-2 text-muted-soft"><use href="#sc-scan"/></svg>
+          <div class="fw-semibold">Chụp ảnh</div>
+          <div class="text-muted-soft small mt-1">Mở camera trực tiếp</div>
+          <input type="file" id="cameraInput" accept="image/*" capture="environment" class="d-none">
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="dropzone h-100" id="fileZone" onclick="document.getElementById('fileInput').click()">
+          <svg width="30" height="30" class="mb-2 text-muted-soft"><use href="#sc-add"/></svg>
+          <div class="fw-semibold">Chọn ảnh có sẵn</div>
+          <div class="text-muted-soft small mt-1">Từ thư viện / máy tính · hoặc kéo thả</div>
+          <input type="file" id="fileInput" accept="image/*" class="d-none">
+        </div>
+      </div>
     </div>
+    <div class="text-muted-soft small text-center mt-3">Hỗ trợ JPG, PNG, WEBP · tối đa 8MB</div>
   </div>
 
   <!-- Loading skeleton -->
@@ -69,27 +82,29 @@
 
 {% block extra_js %}
 <script>
-const dropzone = document.getElementById('dropzone');
+const cameraInput = document.getElementById('cameraInput');
 const fileInput = document.getElementById('fileInput');
+const fileZone = document.getElementById('fileZone');
 const uploadStep = document.getElementById('uploadStep');
 const loadingStep = document.getElementById('loadingStep');
 const previewStep = document.getElementById('previewStep');
 let currentImageId = null;
 
 ['dragover', 'dragleave', 'drop'].forEach(evt => {
-  dropzone.addEventListener(evt, (e) => {
+  fileZone.addEventListener(evt, (e) => {
     e.preventDefault();
-    dropzone.classList.toggle('dragover', evt === 'dragover');
+    e.stopPropagation();
+    fileZone.classList.toggle('dragover', evt === 'dragover');
     if (evt === 'drop' && e.dataTransfer.files.length) {
       fileInput.files = e.dataTransfer.files;
-      handleFile();
+      handleFile(fileInput.files[0]);
     }
   });
 });
-fileInput.addEventListener('change', handleFile);
+cameraInput.addEventListener('change', () => handleFile(cameraInput.files[0]));
+fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
 
-function handleFile() {
-  const file = fileInput.files[0];
+function handleFile(file) {
   if (!file) return;
   uploadStep.classList.add('d-none');
   loadingStep.classList.remove('d-none');
@@ -106,8 +121,21 @@ function handleFile() {
 
     currentImageId = d.image_id;
     document.getElementById('previewImg').src = d.image_url;
-    document.getElementById('detectedLabel').textContent = d.has_detection ? d.detected_label : 'Không xác định rõ';
-    document.getElementById('confidenceBadge').textContent = d.has_detection ? `${(d.confidence*100).toFixed(0)}% tin cậy` : 'Hãy tự chọn danh mục';
+
+    const badge = document.getElementById('confidenceBadge');
+    if (d.auto_suggest) {
+      document.getElementById('detectedLabel').textContent = d.detected_label;
+      badge.textContent = `${(d.confidence * 100).toFixed(0)}% tin cậy`;
+      badge.className = 'badge badge-soft-success ms-1';
+    } else if (d.has_detection) {
+      document.getElementById('detectedLabel').textContent = `${d.detected_label} (chưa đủ chắc chắn)`;
+      badge.textContent = 'Hãy tự chọn danh mục';
+      badge.className = 'badge badge-soft-warning ms-1';
+    } else {
+      document.getElementById('detectedLabel').textContent = 'Không xác định rõ';
+      badge.textContent = 'Hãy tự chọn danh mục';
+      badge.className = 'badge badge-soft-info ms-1';
+    }
 
     const select = document.getElementById('categorySelect');
     select.innerHTML = '';
@@ -118,7 +146,15 @@ function handleFile() {
       select.appendChild(opt);
     });
 
-    document.getElementById('titleInput').value = d.suggested_category_name || '';
+    document.getElementById('titleInput').value = d.suggested_title || (d.auto_suggest ? (d.suggested_category_name || '') : '');
+
+    const amountEl = document.getElementById('amountInput');
+    if (d.suggested_amount) {
+      amountEl.value = String(Math.round(d.suggested_amount));
+      amountEl.dispatchEvent(new Event('input', { bubbles: true }));
+      showToast('AI đã đọc được số tiền từ ảnh — kiểm tra lại trước khi lưu nhé.', 'success');
+    }
+
     document.getElementById('dateInput').value = new Date().toISOString().slice(0, 10);
     previewStep.classList.remove('d-none');
   }).catch(() => {
@@ -128,6 +164,7 @@ function handleFile() {
 }
 
 function resetForm() {
+  cameraInput.value = '';
   fileInput.value = '';
   previewStep.classList.add('d-none');
   uploadStep.classList.remove('d-none');
