@@ -45,6 +45,7 @@
       <div class="small">
         AI nhận diện: <strong id="detectedLabel">-</strong>
         <span id="confidenceBadge" class="badge badge-soft-info ms-1"></span>
+        <span id="aiSourceBadge" class="badge ms-1" style="font-size:.65rem;"></span>
       </div>
     </div>
 
@@ -123,6 +124,16 @@ function handleFile(file) {
     document.getElementById('previewImg').src = d.image_url;
 
     const badge = document.getElementById('confidenceBadge');
+    const sourceBadge = document.getElementById('aiSourceBadge');
+    if (d.ai_source === 'gemini') {
+      sourceBadge.textContent = '⚡ Gemini';
+      sourceBadge.className = 'badge ms-1 badge-soft-success';
+      sourceBadge.style.fontSize = '.65rem';
+    } else {
+      sourceBadge.textContent = '📦 Model offline (dự phòng)';
+      sourceBadge.className = 'badge ms-1 badge-soft-warning';
+      sourceBadge.style.fontSize = '.65rem';
+    }
     if (d.auto_suggest) {
       document.getElementById('detectedLabel').textContent = d.detected_label;
       badge.textContent = `${(d.confidence * 100).toFixed(0)}% tin cậy`;

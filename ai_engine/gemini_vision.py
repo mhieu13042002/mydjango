@@ -19,12 +19,22 @@ offline cũ làm phương án dự phòng.
 import os
 import json
 import base64
+import logging
 import urllib.request
 import urllib.error
 
 from django.conf import settings
 
-GEMINI_MODEL = "gemini-2.0-flash"
+logger = logging.getLogger(__name__)
+
+# LƯU Ý QUAN TRỌNG: Google định kỳ "nghỉ hưu" (deprecate/shutdown) các model
+# Gemini theo tên cụ thể — model cũ dùng ở đây trước đó (gemini-2.0-flash) đã
+# bị Google shutdown từ 01/06/2026, khiến MỌI request đều lỗi 404 nhưng bị
+# code nuốt lỗi âm thầm rồi rớt về model offline cũ (đây chính là lý do AI vẫn
+# nhận diện "ngu ngu" dù đã cấu hình key đúng). Nếu sau này Gemini lại báo lỗi
+# tương tự, hãy kiểm tra trang https://ai.google.dev/gemini-api/docs/pricing
+# xem model bên dưới còn được hỗ trợ không và đổi lại cho đúng.
+GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 # Ngưỡng tin cậy tối thiểu để tự động điền sẵn danh mục (giống tinh thần với
@@ -104,13 +114,19 @@ def analyze_expense_image(image_path, category_names, timeout=20):
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             raw = json.loads(resp.read().decode("utf-8"))
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError, OSError):
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")[:500]
+        logger.error("Gemini API lỗi HTTP %s khi phân tích ảnh: %s", e.code, body)
+        return None
+    except (urllib.error.URLError, TimeoutError, ValueError, OSError) as e:
+        logger.error("Gemini API lỗi kết nối/parse khi phân tích ảnh: %s", e)
         return None
 
     try:
         text = raw["candidates"][0]["content"]["parts"][0]["text"]
         result = json.loads(text)
-    except (KeyError, IndexError, ValueError, TypeError):
+    except (KeyError, IndexError, ValueError, TypeError) as e:
+        logger.error("Gemini API trả về JSON không đúng cấu trúc mong đợi: %s | raw=%s", e, raw)
         return None
 
     try:
